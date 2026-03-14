@@ -1,0 +1,54 @@
+{
+  "card": {
+    "name_default": "Cat Flap",
+    "config_required": "Please configure the OnlyCat card.",
+    "locked": "Locked",
+    "unlocked": "Unlocked",
+    "connected": "Connected",
+    "offline": "Offline",
+    "unavailable": "Unavailable",
+    "policy": "Policy",
+    "no_recent_activity": "No recent activity"
+  },
+  "actions": {
+    "unlock": "Unlock",
+    "unlock_title": "Unlock now",
+    "restart": "Restart",
+    "restart_title": "Restart the cat flap",
+    "cancel": "Cancel"
+  },
+  "camera": {
+    "title": "Last activity",
+    "stream_unavailable": "Stream unavailable."
+  },
+  "history": {
+    "title": "Activity history",
+    "loading": "Loading…",
+    "error": "Unable to load history.",
+    "passage_detected": "Passage detected",
+    "prey_detected": "Prey detected",
+    "human_detected": "Human detected",
+    "row_flap": "Passage",
+    "row_prey": "Prey",
+    "row_human": "Human",
+    "chart_now": "now"
+  },
+  "time": {
+    "just_now": "just now",
+    "minutes_ago": "{n} min ago",
+    "hours_ago": "{h}h ago",
+    "hours_minutes_ago": "{h}h{m} ago"
+  },
+  "confirm_restart": {
+    "title": "Confirm restart",
+    "question": "Are you sure you want to restart the cat flap?",
+    "note": "The cat flap will be temporarily offline during the restart."
+  },
+  "editor": {
+    "card_name": "Card name",
+    "device": "OnlyCat device",
+    "device_hint": "Select the connectivity sensor of your OnlyCat device",
+
+    "show_title": "Show title"
+  }
+}

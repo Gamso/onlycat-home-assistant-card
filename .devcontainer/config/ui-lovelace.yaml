@@ -1,0 +1,42 @@
+title: OnlyCat Dev
+views:
+  - title: Overview
+    path: overview
+    icon: mdi:view-dashboard
+    cards:
+      - type: custom:onlycat-home-assistant-card
+        name: Cat flap
+        device_id: only_cat
+        show_title: true
+
+      - type: entities
+        title: "🧪 Simulate events"
+        entities:
+          - entity: input_boolean.oc_event_backing
+            name: "Flap passage"
+            icon: mdi:cat
+          - entity: input_boolean.oc_contraband_backing
+            name: "Prey detected (contraband)"
+            icon: mdi:rodent
+          - entity: input_boolean.oc_human_backing
+            name: "Human detected"
+            icon: mdi:account
+
+      - type: entities
+        title: "🔧 Device state"
+        entities:
+          - entity: input_boolean.oc_lock_backing
+            name: "Lock"
+            icon: mdi:lock
+          - entity: input_boolean.oc_connectivity_backing
+            name: "Connectivity (online)"
+            icon: mdi:wifi
+          - entity: input_select.oc_policy_backing
+            name: "Passage policy"
+            icon: mdi:door-sliding
+
+      - type: entities
+        title: "📷 Test camera"
+        entities:
+          - entity: camera.only_cat_last_activity_video
+            name: "Last activity (snapshot)"
