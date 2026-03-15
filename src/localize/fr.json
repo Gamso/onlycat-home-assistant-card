@@ -1,0 +1,56 @@
+{
+  "card": {
+    "name_default": "Chatière",
+    "config_required": "Veuillez configurer la carte OnlyCat.",
+    "locked": "Verrouillé",
+    "unlocked": "Ouvert",
+    "connected": "Connecté",
+    "offline": "Hors ligne",
+    "unavailable": "Indisponible",
+    "policy": "Politique",
+    "no_recent_activity": "Aucune activité récente",
+    "errors": "Erreurs de l'appareil"
+  },
+  "actions": {
+    "unlock": "Déverrouiller",
+    "unlock_title": "Déverrouiller maintenant",
+    "restart": "Redémarrer",
+    "restart_title": "Redémarrer la chatière",
+    "cancel": "Annuler"
+  },
+  "camera": {
+    "title": "Dernière activité",
+    "stream_unavailable": "Flux indisponible."
+  },
+  "history": {
+    "title": "Historique des activités",
+    "loading": "Chargement…",
+    "error": "Impossible de charger l'historique.",
+    "passage_detected": "Passage détecté",
+    "prey_detected": "Proie détectée",
+    "human_detected": "Humain détecté",
+    "row_flap": "Passage",
+    "row_prey": "Proie",
+    "row_human": "Humain",
+    "chart_now": "maintenant",
+    "unlock_triggered": "Déclenché par déverrouillage"
+  },
+  "time": {
+    "just_now": "à l'instant",
+    "minutes_ago": "il y a {n} min",
+    "hours_ago": "il y a {h}h",
+    "hours_minutes_ago": "il y a {h}h{m}"
+  },
+  "confirm_restart": {
+    "title": "Confirmer le redémarrage",
+    "question": "Êtes-vous sûr de vouloir redémarrer la chatière ?",
+    "note": "La chatière sera temporairement hors ligne pendant le redémarrage."
+  },
+  "editor": {
+    "card_name": "Nom de la carte",
+    "device": "Appareil OnlyCat",
+    "device_hint": "Sélectionnez le capteur de connectivité de votre appareil OnlyCat",
+
+    "show_title": "Afficher le titre"
+  }
+}

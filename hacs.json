@@ -1,0 +1,6 @@
+{
+  "name": "OnlyCat Home Assistant Card",
+  "render_readme": true,
+  "content_in_root": false,
+  "filename": "onlycat-home-assistant-card.js"
+}

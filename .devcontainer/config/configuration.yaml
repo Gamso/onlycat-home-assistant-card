@@ -1,0 +1,160 @@
+homeassistant:
+  name: OnlyCat DevContainer
+  latitude: 48.8566
+  longitude: 2.3522
+  elevation: 0
+  unit_system: metric
+  country: FR
+  time_zone: Europe/Paris
+
+default_config:
+
+# Disable voice assistant to reduce startup noise
+conversation: null
+
+logger:
+  default: info
+  logs:
+    homeassistant.components.lovelace: debug
+
+lovelace:
+  resource_mode: yaml
+  resources:
+    - url: /local/onlycat_card/onlycat-home-assistant-card.js
+      type: module
+  dashboards:
+    lovelace:
+      mode: yaml
+      filename: ui-lovelace.yaml
+      title: Overview
+      icon: mdi:view-dashboard
+      show_in_sidebar: true
+
+# ── Backing helpers ───────────────────────────────────────────────────────────
+# These input_* helpers store the mutable state that template entities expose
+# with the proper entity IDs expected by the card.
+
+input_boolean:
+  oc_lock_backing:
+    name: "OnlyCat – Lock (backing)"
+    icon: mdi:lock
+    initial: true # starts locked
+  oc_connectivity_backing:
+    name: "OnlyCat – Connectivity (backing)"
+    icon: mdi:wifi
+    initial: true # starts online
+  oc_errors_backing:
+    name: "OnlyCat – Errors (backing)"
+    icon: mdi:alert-circle
+    initial: false
+  oc_event_backing:
+    name: "OnlyCat – Flap Event (backing)"
+    icon: mdi:motion-sensor
+    initial: false
+  oc_contraband_backing:
+    name: "OnlyCat – Contraband Event (backing)"
+    icon: mdi:alert
+    initial: false
+  oc_human_backing:
+    name: "OnlyCat – Human Event (backing)"
+    icon: mdi:account
+    initial: false
+
+input_select:
+  oc_policy_backing:
+    name: "OnlyCat – Policy (backing)"
+    options:
+      - "free_passage"
+      - "indoor_only"
+      - "outdoor_only"
+      - "locked"
+    initial: "free_passage"
+
+# ── Template entities (expose the expected entity IDs) ────────────────────────
+template:
+  - binary_sensor:
+      # binary_sensor.only_cat_lock
+      - name: "only_cat_lock"
+        unique_id: only_cat_lock
+        state: "{{ is_state('input_boolean.oc_lock_backing', 'on') }}"
+        device_class: lock
+
+      # binary_sensor.only_cat_connectivity
+      - name: "only_cat_connectivity"
+        unique_id: only_cat_connectivity
+        state: "{{ is_state('input_boolean.oc_connectivity_backing', 'on') }}"
+        device_class: connectivity
+
+      # binary_sensor.only_cat_errors
+      - name: "only_cat_errors"
+        unique_id: only_cat_errors
+        state: "{{ is_state('input_boolean.oc_errors_backing', 'on') }}"
+        icon: mdi:alert-circle
+
+      # binary_sensor.only_cat_event   (cat flap passage)
+      - name: "only_cat_event"
+        unique_id: only_cat_event
+        state: "{{ is_state('input_boolean.oc_event_backing', 'on') }}"
+        icon: mdi:cat
+
+      # binary_sensor.only_cat_contraband  (prey / contraband)
+      - name: "only_cat_contraband"
+        unique_id: only_cat_contraband
+        state: "{{ is_state('input_boolean.oc_contraband_backing', 'on') }}"
+        icon: mdi:alert
+
+      # binary_sensor.only_cat_human
+      - name: "only_cat_human"
+        unique_id: only_cat_human
+        state: "{{ is_state('input_boolean.oc_human_backing', 'on') }}"
+        icon: mdi:account
+
+  - select:
+      # select.only_cat_policy
+      - name: "only_cat_policy"
+        unique_id: only_cat_policy
+        state: "{{ states('input_select.oc_policy_backing') }}"
+        options: "{{ state_attr('input_select.oc_policy_backing', 'options') }}"
+        select_option:
+          service: input_select.select_option
+          data:
+            entity_id: input_select.oc_policy_backing
+            option: "{{ option }}"
+
+  - button:
+      # button.only_cat_unlock  – simulates unlocking by turning off the lock
+      - name: "only_cat_unlock"
+        unique_id: only_cat_unlock
+        press:
+          service: input_boolean.turn_off
+          data:
+            entity_id: input_boolean.oc_lock_backing
+
+      # button.only_cat_reboot  – simulates a reboot by toggling connectivity
+      - name: "only_cat_reboot"
+        unique_id: only_cat_reboot
+        press:
+          service: input_boolean.turn_off
+          data:
+            entity_id: input_boolean.oc_connectivity_backing
+
+# ── Test camera ───────────────────────────────────────────────────────────────
+# Serves a static JPEG (extracted from video_test.mp4) as the "last activity"
+# camera entity expected by the card.
+camera:
+  - platform: onlycat_test_camera
+    name: only_cat_last_activity_video
+    file_path: /config/www/onlycat_card/video_poster.jpg
+
+# Automation: restore connectivity 5 s after a simulated reboot press
+automation:
+  - alias: "OnlyCat – Restore connectivity after reboot"
+    trigger:
+      platform: state
+      entity_id: input_boolean.oc_connectivity_backing
+      to: "off"
+    action:
+      - delay: "00:00:05"
+      - service: input_boolean.turn_on
+        data:
+          entity_id: input_boolean.oc_connectivity_backing

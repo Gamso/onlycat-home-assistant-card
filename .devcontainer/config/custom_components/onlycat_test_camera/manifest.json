@@ -1,0 +1,10 @@
+{
+  "domain": "onlycat_test_camera",
+  "name": "OnlyCat Test Camera",
+  "version": "1.0.0",
+  "documentation": "",
+  "dependencies": [],
+  "codeowners": [],
+  "requirements": [],
+  "iot_class": "local_polling"
+}
