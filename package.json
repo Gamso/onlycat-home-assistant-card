@@ -1,6 +1,6 @@
 {
   "name": "onlycat-home-assistant-card",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "Custom Home Assistant card for the OnlyCat smart cat flap integration",
   "type": "module",
