@@ -44,6 +44,9 @@ class OnlyCatHomeAssistantCard extends LitElement {
   private get _humanEntityId() {
     return `binary_sensor.${this._deviceId}_human`;
   }
+  private get _lastActivityEntityId() {
+    return `image.${this._deviceId}_last_activity_image`;
+  }
   private get _errorsEntityId() {
     return `binary_sensor.${this._deviceId}_errors`;
   }
@@ -312,6 +315,7 @@ class OnlyCatHomeAssistantCard extends LitElement {
             .eventEntityId=${this._eventEntityId}
             .humanEntityId=${this._humanEntityId}
             .contrabandEntityId=${this._contrabandEntityId}
+            .lastActivityEntityId=${this._lastActivityEntityId}
           ></onlycat-camera-panel>
           ${this._renderPolicy()} ${this._renderActions()}
           <onlycat-activity-history
