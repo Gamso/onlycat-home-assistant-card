@@ -13,15 +13,16 @@ integration.
 
 ## Features
 
-| Feature              | Description                                              | Entity used                                                  |
-| -------------------- | -------------------------------------------------------- | ------------------------------------------------------------ |
-| 📷 Camera snapshot   | Last activity photo/video, tap to open full-screen modal | `camera.<device_id>_last_activity_video`                     |
-| 🔒 Lock status       | Color-coded pill, reflects physical lock state           | `binary_sensor.<device_id>_lock`                             |
-| 📡 Connectivity      | Online / offline pill                                    | `binary_sensor.<device_id>_connectivity`                     |
-| 🚪 Door policy       | Drop-down selector (Allow / Block / Outdoor / Indoor)    | `select.<device_id>_policy`                                  |
-| 🔓 Unlock button     | One-tap unlock                                           | `button.<device_id>_unlock`                                  |
-| 🔄 Reboot button     | Reboot with confirmation dialog                          | `button.<device_id>_reboot`                                  |
-| 📊 Activity timeline | Collapsible day-by-day frise with zoom                   | `binary_sensor.<device_id>_event` · `_contraband` · `_human` |
+| Feature              | Description                                           | Entity used                                                  |
+| -------------------- | ----------------------------------------------------- | ------------------------------------------------------------ |
+| 📷 Camera snapshot   | Last activity video, tap to open full-screen modal    | `camera.<device_id>_last_activity_video`                     |
+| 🖼️ Image snapshot    | Last activity photo, tap to open full-screen modal    | `image.<device_id>_last_activity_image`                      |
+| 🔒 Lock status       | Color-coded pill, reflects physical lock state        | `binary_sensor.<device_id>_lock`                             |
+| 📡 Connectivity      | Online / offline pill                                 | `binary_sensor.<device_id>_connectivity`                     |
+| 🚪 Door policy       | Drop-down selector (Allow / Block / Outdoor / Indoor) | `select.<device_id>_policy`                                  |
+| 🔓 Unlock button     | One-tap unlock                                        | `button.<device_id>_unlock`                                  |
+| 🔄 Reboot button     | Reboot with confirmation dialog                       | `button.<device_id>_reboot`                                  |
+| 📊 Activity timeline | Collapsible day-by-day frise with zoom                | `binary_sensor.<device_id>_event` · `_contraband` · `_human` |
 
 ### Activity timeline detail
 
@@ -60,7 +61,7 @@ name: "Cat flap" # Optional — card title
 show_title: true # Optional — show the card title bar (default: true)
 ```
 
-All entity IDs (`camera.*`, `binary_sensor.*`, `select.*`, `button.*`) are
+All entity IDs (`camera.*`, `image.*`, `binary_sensor.*`, `select.*`, `button.*`) are
 derived automatically from `device_id` — no manual entity mapping required.
 
 ---

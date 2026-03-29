@@ -9,6 +9,7 @@ class OnlyCatCameraPanel extends LitElement {
   @property() public eventEntityId?: string;
   @property() public humanEntityId?: string;
   @property() public contrabandEntityId?: string;
+  @property() public lastActivityEntityId?: string;
 
   private _entity() {
     return this.hass?.states?.[this.entityId];
@@ -37,11 +38,34 @@ class OnlyCatCameraPanel extends LitElement {
   }
 
   /**
-   * Returns the timestamp (ms) of the most recent activity across the three
-   * event sensors: event, human, contraband.
+   * Returns the timestamp (ms) of the most recent activity.
+   * Priority:
+   *   1. lastActivity image entity (if available)
+   *   2. event, human, contraband sensors
    */
   private _latestActivityTs(): number | null {
-    const ids = [this.eventEntityId, this.humanEntityId, this.contrabandEntityId];
+    // Home Assistant image entities expose their capture time in `state`.
+    // Keep a few attribute fallbacks for integration-specific implementations.
+    if (this.lastActivityEntityId) {
+      const imageEntity = this.hass?.states?.[this.lastActivityEntityId];
+      if (imageEntity) {
+        const dateStr =
+          imageEntity.state ||
+          imageEntity.attributes?.datetime ||
+          imageEntity.attributes?.last_activity ||
+          imageEntity.attributes?.created_at;
+        const ms = new Date(dateStr).getTime();
+        if (!isNaN(ms)) {
+          return ms;
+        }
+      }
+    }
+    // 2. Fallback to event, human, contraband sensors
+    const ids = [
+      this.eventEntityId,
+      this.humanEntityId,
+      this.contrabandEntityId,
+    ];
     let latest: number | null = null;
     for (const id of ids) {
       if (!id) continue;
