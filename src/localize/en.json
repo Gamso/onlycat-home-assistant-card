@@ -40,8 +40,7 @@
     "kind_out_attempt": "Tried to go out",
     "kind_unknown": "Passage",
     "attempt": "Didn't go through",
-    "outside": "Outside",
-    "unknown_pet": "Unknown visitor"
+    "outside": "Outside"
   },
   "pets": {
     "inside": "Inside",

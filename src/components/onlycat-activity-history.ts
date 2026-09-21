@@ -378,13 +378,11 @@ class OnlyCatActivityHistory extends LitElement {
     return localize(this.hass, KIND_KEY[kind]);
   }
 
-  /** Pet names for a passage's RFID codes; unknown chips show as such. */
+  /** Names of the known cats in a passage; visitors aren't named. */
   private _petNames(p: Passage): string[] {
-    return p.rfids.map(
-      (rfid) =>
-        this.pets.find((pet) => pet.rfid === rfid)?.name ??
-        localize(this.hass, "history.unknown_pet"),
-    );
+    return this.pets
+      .filter((pet) => p.rfids.includes(pet.rfid))
+      .map((pet) => pet.name);
   }
 
   private _passageTooltip(p: Passage): string {
@@ -400,6 +398,17 @@ class OnlyCatActivityHistory extends LitElement {
   }
 
   // ── Rows ──────────────────────────────────────────────────────────────────
+
+  /**
+   * Passages of the known cats only: unknown visitors and passages where no
+   * chip was read are hidden. Without any known cat (e.g. an integration older
+   * than v2.0.7), every passage is kept, since none could be attributed.
+   */
+  private _catPassages(): Passage[] {
+    if (!this.pets.length) return this._passages;
+    const known = new Set(this.pets.map((p) => p.rfid));
+    return this._passages.filter((p) => p.rfids.some((r) => known.has(r)));
+  }
 
   private _rows(): Row[] {
     // Colors: use inline style so CSS custom properties resolve correctly.
@@ -417,7 +426,7 @@ class OnlyCatActivityHistory extends LitElement {
         key: "flap",
         label: localize(this.hass, "history.row_flap"),
         color: "var(--history-flap-color, #29b6f6)",
-        events: this._passages,
+        events: this._catPassages(),
         passages: true,
       },
       ...petRows,
@@ -658,8 +667,9 @@ class OnlyCatActivityHistory extends LitElement {
   }
 
   private _renderLegend() {
-    const hasDirection = this._passages.some((p) => p.kind !== "unknown");
-    const hasAttempt = this._passages.some((p) => isAttempt(p.kind));
+    const passages = this._catPassages();
+    const hasDirection = passages.some((p) => p.kind !== "unknown");
+    const hasAttempt = passages.some((p) => isAttempt(p.kind));
     if (!hasDirection && !this.pets.length) return nothing;
     return html`
       <div class="chart-legend">

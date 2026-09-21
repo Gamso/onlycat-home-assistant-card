@@ -40,8 +40,7 @@
     "kind_out_attempt": "Tentative de sortie",
     "kind_unknown": "Passage",
     "attempt": "Non passé",
-    "outside": "Dehors",
-    "unknown_pet": "Visiteur inconnu"
+    "outside": "Dehors"
   },
   "pets": {
     "inside": "Dedans",
