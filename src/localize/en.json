@@ -33,13 +33,29 @@
     "row_prey": "Prey",
     "row_human": "Human",
     "chart_now": "now",
-    "unlock_triggered": "Triggered by unlock button"
+    "unlock_triggered": "Triggered by unlock button",
+    "kind_in": "In",
+    "kind_out": "Out",
+    "kind_in_attempt": "Tried to come in",
+    "kind_out_attempt": "Tried to go out",
+    "kind_unknown": "Passage",
+    "attempt": "Didn't go through",
+    "outside": "Outside",
+    "unknown_pet": "Unknown cat"
+  },
+  "pets": {
+    "inside": "Inside",
+    "outside": "Outside",
+    "unknown": "Unknown"
   },
   "time": {
     "just_now": "just now",
     "minutes_ago": "{n} min ago",
     "hours_ago": "{h}h ago",
-    "hours_minutes_ago": "{h}h{m} ago"
+    "hours_minutes_ago": "{h}h{m} ago",
+    "minutes": "{n} min",
+    "hours_minutes": "{h}h{m}",
+    "days": "{d} d"
   },
   "confirm_restart": {
     "title": "Confirm restart",
@@ -50,7 +66,7 @@
     "card_name": "Card name",
     "device": "OnlyCat device",
     "device_hint": "Select the connectivity sensor of your OnlyCat device",
-
-    "show_title": "Show title"
+    "show_title": "Show title",
+    "show_pets": "Show pets"
   }
 }

@@ -23,10 +23,19 @@ integration.
 | 🔓 Unlock button     | One-tap unlock                                        | `button.<device_id>_unlock`                                  |
 | 🔄 Reboot button     | Reboot with confirmation dialog                       | `button.<device_id>_reboot`                                  |
 | 📊 Activity timeline | Collapsible day-by-day frise with zoom                | `binary_sensor.<device_id>_event` · `_contraband` · `_human` |
+| ↔️ Entry / exit      | Each passage colored by direction, with the pet's name | `binary_sensor.<device_id>_event` (`direction`, `action`, `rfidCode`) |
+| 🐈 Pets              | Inside / outside chip per pet, and one timeline row each | `device_tracker.<rfid>_tracker`                            |
 
 ### Activity timeline detail
 
-- **3 rows**: Passage (flap), Prey detected, Human detected — each as a colored timeline bar.
+- **Rows**: Passage (flap), one row per pet, Prey detected, Human detected.
+- **Direction**: passages are green for an entry and orange for an exit; a
+  passage that didn't go through (the integration's `action` other than
+  `TRANSIT`) is drawn hollow with a dashed outline. Passages without an event
+  summary stay blue.
+- **Pet rows**: a light band shows when the pet was outside, with that pet's
+  passages on top. The hover tooltip and the zoom show the direction and which
+  pet went through.
 - **Calendar-day navigation** with ◄ ► arrows to browse past days.
 - **Hover tooltip** on each bar shows start time, end time and duration.
 - **Zoom overlay** on hover: 30× magnification window centered on the hovered event, with ◄ ► buttons to navigate to the previous/next event without leaving the zoom.
@@ -59,7 +68,22 @@ type: custom:onlycat-home-assistant-card
 device_id: oc_0cbfb5801849 # Required — your OnlyCat device ID
 name: "Cat flap" # Optional — card title
 show_title: true # Optional — show the card title bar (default: true)
+show_pets: true # Optional — show the per-pet inside/outside chips (default: true)
+pets: # Optional — defaults to every OnlyCat pet tracker
+  - device_tracker.900123000000001_tracker
+  - entity: device_tracker.900123000000002_tracker
+    name: Filou # Optional — defaults to the tracker's name
+    color: "#7e57c2" # Optional
 ```
+
+Entry/exit and per-pet data need version **2.0.7** or later of the integration,
+which adds the event summary (`direction`, `action`, `rfidCode`) to the flap
+event sensor. With older versions, passages are simply shown without a
+direction.
+
+Timeline colors can be themed with `--history-in-color`,
+`--history-out-color`, `--history-flap-color`, `--history-contraband-color` and
+`--history-human-color`.
 
 All entity IDs (`camera.*`, `image.*`, `binary_sensor.*`, `select.*`, `button.*`) are
 derived automatically from `device_id` — no manual entity mapping required.

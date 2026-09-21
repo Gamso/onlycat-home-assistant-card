@@ -11,6 +11,7 @@ the data is always fresh.
 """
 
 import datetime
+import json
 import os
 import random
 import sqlite3
@@ -26,6 +27,54 @@ ENTITY_PROFILES: dict[str, tuple[float, float, float]] = {
     "binary_sensor.only_cat_contraband": (0.14, 10,  30),  # ~1 every 7 h,   10-30 s
     "binary_sensor.only_cat_human":      (0.10,  5,  20),  # ~1 every 10 h,   5-20 s
 }
+
+
+EVENT_ENTITY = "binary_sensor.only_cat_event"
+
+# Fake pets, same RFIDs as custom_components/onlycat_test_camera
+PETS = {
+    "900123000000001": "Minou",
+    "900123000000002": "Filou",
+}
+UNKNOWN_RFID = "999000000000999"
+
+
+def _tracker(rfid: str) -> str:
+    return f"device_tracker.{rfid}_tracker"
+
+
+def passage_attributes(
+    periods: list[tuple[float, float]], window_start: float
+) -> tuple[list[dict], dict[str, list[tuple[float, str]]]]:
+    """Give each flap passage the event summary the integration exposes.
+
+    Returns the attributes for each passage, and for each pet the list of
+    (timestamp, state) changes of its presence tracker, starting at
+    `window_start`.
+    """
+    location = {rfid: random.choice(["home", "not_home"]) for rfid in PETS}
+    tracker = {rfid: [(window_start, loc)] for rfid, loc in location.items()}
+    attrs: list[dict] = []
+    event_id = 5000
+    for on_ts, _ in periods:
+        event_id += 1
+        rfid = random.choices(
+            [*PETS, UNKNOWN_RFID, None], weights=[45, 45, 5, 5]
+        )[0]
+        a: dict = {"eventId": event_id, "eventTriggerSource": "OUTDOOR_MOTION"}
+        if rfid is not None:
+            loc = location.get(rfid, random.choice(["home", "not_home"]))
+            transit = random.random() > 0.1
+            a.update(
+                rfidCode=rfid,
+                direction="OUTWARD" if loc == "home" else "INWARD",
+                action="TRANSIT" if transit else "NONE",
+            )
+            if transit and rfid in PETS:
+                location[rfid] = "not_home" if loc == "home" else "home"
+                tracker[rfid].append((on_ts, location[rfid]))
+        attrs.append(a)
+    return attrs, tracker
 
 
 def _day_boundaries(days_ago: int) -> tuple[float, float]:
@@ -94,8 +143,8 @@ def main() -> None:
     window_end, _ = _day_boundaries(0)
     window_end = time.time()  # use precise current time as end
 
-    for entity_id, (avg_per_hour, dur_min, dur_max) in ENTITY_PROFILES.items():
-        # ── Find or create metadata_id ────────────────────────────────────────
+    def prepare(entity_id: str) -> int:
+        """Find or create metadata_id, dropping states already in the window."""
         cur.execute(
             "SELECT metadata_id FROM states_meta WHERE entity_id = ?", (entity_id,)
         )
@@ -111,11 +160,44 @@ def main() -> None:
             deleted = cur.execute("SELECT changes()").fetchone()[0]  # type: ignore[index]
             if deleted:
                 print(f"  🗑  {entity_id}: removed {deleted} stale states.")
-        else:
-            cur.execute(
-                "INSERT INTO states_meta (entity_id) VALUES (?)", (entity_id,)
-            )
-            metadata_id = cur.lastrowid  # type: ignore[assignment]
+            return metadata_id
+        cur.execute("INSERT INTO states_meta (entity_id) VALUES (?)", (entity_id,))
+        return cur.lastrowid  # type: ignore[return-value]
+
+    def insert(
+        entity_id: str,
+        metadata_id: int,
+        state: str,
+        ts: float,
+        attributes: dict,
+        old_state_id: int | None,
+    ) -> int:
+        # Attributes go in the legacy inline column, which the recorder still
+        # reads when attributes_id is NULL.
+        cur.execute(
+            """
+            INSERT INTO states
+                (entity_id, state, attributes, last_changed_ts,
+                 last_reported_ts, last_updated_ts, old_state_id,
+                 metadata_id, origin_idx)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
+            """,
+            (entity_id, state, json.dumps(attributes), ts, ts, ts,
+             old_state_id, metadata_id),
+        )
+        return cur.lastrowid  # type: ignore[return-value]
+
+    def last_state_before(metadata_id: int) -> int | None:
+        cur.execute(
+            "SELECT state_id FROM states WHERE metadata_id = ? "
+            "AND last_changed_ts < ? ORDER BY last_changed_ts DESC LIMIT 1",
+            (metadata_id, window_start),
+        )
+        prev_row = cur.fetchone()
+        return prev_row[0] if prev_row else None
+
+    for entity_id, (avg_per_hour, dur_min, dur_max) in ENTITY_PROFILES.items():
+        metadata_id = prepare(entity_id)
 
         # ── Generate one batch of events per calendar day ─────────────────────
         all_periods: list[tuple[float, float]] = []
@@ -128,39 +210,32 @@ def main() -> None:
         print(f"  📊 {entity_id}: inserting {len(all_periods)} events over {DAYS} days…")
 
         # ── Insert on/off state pairs ─────────────────────────────────────────
-        # Fetch the last existing old_state_id before our window
-        cur.execute(
-            "SELECT state_id FROM states WHERE metadata_id = ? "
-            "AND last_changed_ts < ? ORDER BY last_changed_ts DESC LIMIT 1",
-            (metadata_id, window_start),
-        )
-        prev_row = cur.fetchone()
-        prev_state_id: int | None = prev_row[0] if prev_row else None
+        if entity_id == EVENT_ENTITY:
+            attrs, trackers = passage_attributes(all_periods, window_start)
+        else:
+            attrs, trackers = [{} for _ in all_periods], {}
 
-        for on_ts, off_ts in all_periods:
-            cur.execute(
-                """
-                INSERT INTO states
-                    (entity_id, state, attributes, last_changed_ts,
-                     last_reported_ts, last_updated_ts, old_state_id,
-                     metadata_id, origin_idx)
-                VALUES (?, 'on', '{}', ?, ?, ?, ?, ?, 0)
-                """,
-                (entity_id, on_ts, on_ts, on_ts, prev_state_id, metadata_id),
+        prev_state_id = last_state_before(metadata_id)
+        for (on_ts, off_ts), a in zip(all_periods, attrs):
+            on_id = insert(entity_id, metadata_id, "on", on_ts, a, prev_state_id)
+            prev_state_id = insert(
+                entity_id, metadata_id, "off", off_ts, a, on_id
             )
-            on_id: int = cur.lastrowid  # type: ignore[assignment]
 
-            cur.execute(
-                """
-                INSERT INTO states
-                    (entity_id, state, attributes, last_changed_ts,
-                     last_reported_ts, last_updated_ts, old_state_id,
-                     metadata_id, origin_idx)
-                VALUES (?, 'off', '{}', ?, ?, ?, ?, ?, 0)
-                """,
-                (entity_id, off_ts, off_ts, off_ts, on_id, metadata_id),
-            )
-            prev_state_id = cur.lastrowid  # type: ignore[assignment]
+        # ── Pet presence trackers, consistent with the passages ───────────────
+        for rfid, changes in trackers.items():
+            tracker_id = _tracker(rfid)
+            tracker_meta = prepare(tracker_id)
+            prev_id = last_state_before(tracker_meta)
+            tracker_attrs = {
+                "friendly_name": f"{PETS[rfid]}'s presence",
+                "source_type": "router",
+            }
+            for ts, state in changes:
+                prev_id = insert(
+                    tracker_id, tracker_meta, state, ts, tracker_attrs, prev_id
+                )
+            print(f"  🐈 {tracker_id}: {len(changes) - 1} moves.")
 
     con.commit()
     con.close()
