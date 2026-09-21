@@ -78,9 +78,11 @@ pets: # Optional — defaults to every named OnlyCat pet tracker
 
 The integration creates a tracker for every chip it reads, including visitors
 that aren't registered in the OnlyCat app. Those have no name (the tracker is
-named after the chip code), so auto-discovery leaves them out; their passages
-still appear in the Passage row as "Unknown visitor". List one under `pets` to
-show it anyway.
+named after the chip code), so auto-discovery leaves them out. The timeline then
+only shows passages by your cats: visitors' passages, and passages where no
+chip was read, are hidden. List a visitor under `pets` to show it anyway.
+Without any cat to match (integration older than v2.0.7), every passage is
+shown.
 
 Entry/exit and per-pet data need version **2.0.7** or later of the integration,
 which adds the event summary (`direction`, `action`, `rfidCode`) to the flap

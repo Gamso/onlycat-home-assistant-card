@@ -27,10 +27,9 @@ class OnlyCatCameraPanel extends LitElement {
     const kind = classifyPassage(a?.direction, a?.action);
     if (kind === "unknown") return nothing;
     const rfid = a?.rfidCode ? String(a.rfidCode).toLowerCase() : undefined;
-    const pet = rfid
-      ? (this.pets.find((p) => p.rfid === rfid)?.name ??
-        localize(this.hass, "history.unknown_pet"))
-      : undefined;
+    const pet = this.pets.find((p) => p.rfid === rfid)?.name;
+    // Like the timeline, say nothing about a passage no known cat made.
+    if (this.pets.length && !pet) return nothing;
     const kindKey = `history.kind_${kind}` as const;
     return html`<span
       class="camera-passage ${isAttempt(kind) ? "camera-passage--attempt" : ""}"
