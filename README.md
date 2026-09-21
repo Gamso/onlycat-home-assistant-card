@@ -69,12 +69,18 @@ device_id: oc_0cbfb5801849 # Required — your OnlyCat device ID
 name: "Cat flap" # Optional — card title
 show_title: true # Optional — show the card title bar (default: true)
 show_pets: true # Optional — show the per-pet inside/outside chips (default: true)
-pets: # Optional — defaults to every OnlyCat pet tracker
+pets: # Optional — defaults to every named OnlyCat pet tracker
   - device_tracker.900123000000001_tracker
   - entity: device_tracker.900123000000002_tracker
     name: Filou # Optional — defaults to the tracker's name
     color: "#7e57c2" # Optional
 ```
+
+The integration creates a tracker for every chip it reads, including visitors
+that aren't registered in the OnlyCat app. Those have no name (the tracker is
+named after the chip code), so auto-discovery leaves them out; their passages
+still appear in the Passage row as "Unknown visitor". List one under `pets` to
+show it anyway.
 
 Entry/exit and per-pet data need version **2.0.7** or later of the integration,
 which adds the event summary (`direction`, `action`, `rfidCode`) to the flap
