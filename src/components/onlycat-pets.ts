@@ -52,6 +52,15 @@ function isOnlyCatTracker(hass: any, entityId: string): boolean {
   return reg ? reg.platform === "onlycat" : true;
 }
 
+/**
+ * The integration creates a tracker for every chip it reads, including
+ * visitors that aren't registered in the OnlyCat app. Those have no label,
+ * so the integration names them after the RFID code itself.
+ */
+function isUnnamedVisitor(name: string, rfid: string): boolean {
+  return name.toLowerCase() === rfid;
+}
+
 export function discoverPets(
   hass: any,
   config: OnlyCatCardConfig,
@@ -63,7 +72,7 @@ export function discoverPets(
       .filter((id) => isOnlyCatTracker(hass, id))
       .sort();
 
-  return entries.map((entry, i) => {
+  const pets = entries.map((entry) => {
     const cfg = typeof entry === "string" ? { entity: entry } : entry;
     const friendly = states[cfg.entity]?.attributes?.friendly_name;
     const rfid = rfidFromTracker(cfg.entity);
@@ -71,9 +80,17 @@ export function discoverPets(
       entityId: cfg.entity,
       rfid,
       name: cfg.name || petNameFromFriendly(friendly) || rfid,
-      color: cfg.color || PET_PALETTE[i % PET_PALETTE.length],
+      color: cfg.color,
     };
   });
+
+  // An explicit `pets` list is shown as given; discovery keeps named cats only.
+  return pets
+    .filter((pet) => config.pets || !isUnnamedVisitor(pet.name, pet.rfid))
+    .map((pet, i) => ({
+      ...pet,
+      color: pet.color || PET_PALETTE[i % PET_PALETTE.length],
+    }));
 }
 
 /** Mirrors the integration's `Pet.update_from_subevent`. */
