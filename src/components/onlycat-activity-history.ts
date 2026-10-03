@@ -512,6 +512,7 @@ class OnlyCatActivityHistory extends LitElement {
                   <span
                     class="legend-swatch"
                     style="background: ${PASSAGE_COLOR[k]}"
+                    aria-hidden="true"
                   ></span>
                   ${this._kindLabel(k)}
                 </span>`,
@@ -519,13 +520,19 @@ class OnlyCatActivityHistory extends LitElement {
           : nothing}
         ${hasAttempt
           ? html`<span class="legend-item">
-              <span class="legend-swatch legend-swatch--attempt"></span>
+              <span
+                class="legend-swatch legend-swatch--attempt"
+                aria-hidden="true"
+              ></span>
               ${localize(this.hass, "history.attempt")}
             </span>`
           : nothing}
         ${this.pets.length
           ? html`<span class="legend-item">
-              <span class="legend-swatch legend-swatch--outside"></span>
+              <span
+                class="legend-swatch legend-swatch--outside"
+                aria-hidden="true"
+              ></span>
               ${localize(this.hass, "history.outside")}
             </span>`
           : nothing}
