@@ -69,12 +69,17 @@ describe("onlycat-home-assistant-card-editor", () => {
       device: "dev1",
       name: "Chatière",
       show_title: true,
+      show_pets: true,
     });
   });
 
   it("drops the legacy prefix when another device is picked", async () => {
     const { form, changes, emit } = await mount({ device_id: "oc_1" });
     emit({ ...form.data!, device: "dev2", entities: { lock: "" } });
-    expect(changes[changes.length - 1]).toEqual({ device: "dev2", show_title: true });
+    expect(changes[changes.length - 1]).toEqual({
+      device: "dev2",
+      show_title: true,
+      show_pets: true,
+    });
   });
 });

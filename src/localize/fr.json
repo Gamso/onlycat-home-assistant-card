@@ -38,14 +38,29 @@
     "next_event": "Événement suivant",
     "close_zoom": "Fermer le zoom",
     "previous_day": "Jour précédent",
-    "next_day": "Jour suivant"
+    "next_day": "Jour suivant",
+    "kind_in": "Entrée",
+    "kind_out": "Sortie",
+    "kind_in_attempt": "Tentative d'entrée",
+    "kind_out_attempt": "Tentative de sortie",
+    "kind_unknown": "Passage",
+    "attempt": "Non passé",
+    "outside": "Dehors"
+  },
+  "pets": {
+    "inside": "Dedans",
+    "outside": "Dehors",
+    "unknown": "Inconnu"
   },
   "time": {
     "just_now": "à l'instant",
     "minutes_ago": "il y a {n} min",
     "hours_ago": "il y a {h}h",
     "hours_minutes_ago": "il y a {h}h{m}",
-    "days_ago": "il y a {d} j"
+    "days_ago": "il y a {d} j",
+    "minutes": "{n} min",
+    "hours_minutes": "{h}h{m}",
+    "days": "{d} j"
   },
   "confirm_restart": {
     "title": "Confirmer le redémarrage",
@@ -57,6 +72,7 @@
     "device": "Appareil OnlyCat",
     "device_hint": "Appareil créé par l'intégration OnlyCat",
     "show_title": "Afficher le titre",
+    "show_pets": "Afficher les chats",
     "entities": "Entités",
     "entities_hint": "Laisser vide pour les détecter depuis l'appareil. Utile seulement pour des entités renommées.",
     "advanced": "Avancé",

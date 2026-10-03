@@ -2,7 +2,13 @@ import { LitElement, html, nothing, css } from "lit";
 import { property } from "lit/decorators.js";
 import { localize } from "../localize/localize";
 import { formatRelativeTime, safeCameraUrl } from "../utils/camera";
-import type { HomeAssistant } from "./types";
+import {
+  PASSAGE_COLOR,
+  PASSAGE_ICON,
+  classifyPassage,
+  isAttempt,
+} from "./onlycat-pets";
+import type { HomeAssistant, PetInfo } from "./types";
 
 class OnlyCatCameraPanel extends LitElement {
   @property({ attribute: false }) public hass!: HomeAssistant;
@@ -12,6 +18,31 @@ class OnlyCatCameraPanel extends LitElement {
   @property() public humanEntityId?: string;
   @property() public contrabandEntityId?: string;
   @property() public lastActivityEntityId?: string;
+  @property({ attribute: false }) public pets: PetInfo[] = [];
+
+  /** Direction and pet of the latest passage, from the event summary. */
+  private _renderLastPassage() {
+    const a = this.eventEntityId
+      ? this.hass?.states?.[this.eventEntityId]?.attributes
+      : undefined;
+    const kind = classifyPassage(
+      a?.direction as string | undefined,
+      a?.action as string | undefined,
+    );
+    if (kind === "unknown") return nothing;
+    const rfid = a?.rfidCode ? String(a.rfidCode).toLowerCase() : undefined;
+    const pet = this.pets.find((p) => p.rfid === rfid)?.name;
+    // Like the timeline, say nothing about a passage no known cat made.
+    if (this.pets.length && !pet) return nothing;
+    const kindKey = `history.kind_${kind}` as const;
+    return html`<span
+      class="camera-passage ${isAttempt(kind) ? "camera-passage--attempt" : ""}"
+      style="--passage-color: ${PASSAGE_COLOR[kind]}"
+    >
+      <ha-icon icon="${PASSAGE_ICON[kind]}"></ha-icon>
+      ${localize(this.hass, kindKey)}${pet ? html` · ${pet}` : nothing}
+    </span>`;
+  }
 
   /** Re-renders every minute so the "x min ago" label stays current. */
   private _clockTimer?: ReturnType<typeof setInterval>;
@@ -125,6 +156,7 @@ class OnlyCatCameraPanel extends LitElement {
                       )}</span
                     >`
                   : nothing}
+                ${this._renderLastPassage()}
               </div>
             `
           : html`
@@ -199,6 +231,27 @@ class OnlyCatCameraPanel extends LitElement {
 
     .camera-ts {
       font-size: 0.8rem;
+    }
+
+    .camera-passage {
+      margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px 2px 6px;
+      border-radius: 99px;
+      background: var(--passage-color);
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .camera-passage ha-icon {
+      --mdc-icon-size: 15px;
+    }
+
+    .camera-passage--attempt {
+      background: rgba(0, 0, 0, 0.45);
+      border: 1.5px dashed var(--passage-color);
     }
 
     .camera-placeholder {

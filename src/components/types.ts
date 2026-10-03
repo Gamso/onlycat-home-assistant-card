@@ -34,6 +34,7 @@ export interface HomeAssistant {
   locale?: HassLocale;
   language?: string;
   callApi<T>(method: "GET" | "POST", path: string): Promise<T>;
+  callWS<T>(msg: Record<string, unknown>): Promise<T>;
   callService(
     domain: string,
     service: string,
@@ -41,6 +42,10 @@ export interface HomeAssistant {
   ): Promise<unknown>;
   formatEntityState?(stateObj: HassEntity, state?: string): string;
 }
+/** A pet as configured in YAML: either a device_tracker id or an object. */
+export type PetConfigEntry =
+  | string
+  | { entity: string; name?: string; color?: string };
 
 export interface OnlyCatCardConfig {
   name?: string;
@@ -53,21 +58,52 @@ export interface OnlyCatCardConfig {
   show_title?: boolean;
   /** Number of past days reachable in the history frise (default 10). */
   history_days?: number;
+  /** Pet trackers to show; auto-discovered from the onlycat platform if omitted. */
+  pets?: PetConfigEntry[];
+  /** Show the per-pet presence chips (default: true). */
+  show_pets?: boolean;
 }
 
-export type HistoryStateFull = {
-  entity_id: string;
-  state: string;
-  last_changed: string;
-};
+export interface PetInfo {
+  /** device_tracker.<rfid>_tracker */
+  entityId: string;
+  /** RFID code parsed from the entity id, lower-cased. */
+  rfid: string;
+  name: string;
+  color: string;
+}
 
-// HA omits `lc` when last_changed == last_updated (only `lu` is sent).
-export type HistoryStateMinimal = { s: string; lc?: number; lu?: number };
-
-export type HistoryEntry = HistoryStateFull | HistoryStateMinimal;
+/**
+ * What a flap passage actually was, from the event summary's
+ * `direction` + `action` attributes. An `*_attempt` is a passage that did not
+ * go through (the integration only counts `action == TRANSIT` as crossing).
+ */
+export type PassageKind =
+  | "in"
+  | "out"
+  | "in_attempt"
+  | "out_attempt"
+  | "unknown";
 
 /** One "on" period of a binary sensor (epoch ms). */
 export interface ParsedPeriod {
   startTs: number;
   endTs: number;
+}
+
+/** A flap event, enriched with the attributes the integration attaches to it. */
+export interface Passage extends ParsedPeriod {
+  eventId?: number;
+  kind: PassageKind;
+  /** RFID codes seen during the event, lower-cased. */
+  rfids: string[];
+}
+
+/** HA websocket history, compressed format (`history/history_during_period`). */
+export interface CompressedState {
+  s: string;
+  a?: Record<string, unknown>;
+  /** seconds since epoch; omitted when equal to `lu` */
+  lc?: number;
+  lu: number;
 }

@@ -1,8 +1,30 @@
 import { LitElement, html, nothing, svg, css } from "lit";
 import { property, state } from "lit/decorators.js";
 import { localize } from "../localize/localize";
-import type { HistoryEntry, HomeAssistant, ParsedPeriod } from "./types";
-import { historyPath, parseHistory } from "../utils/history";
+import {
+  PASSAGE_COLOR,
+  PASSAGE_ICON,
+  isAttempt,
+  isOutside,
+} from "./onlycat-pets";
+import type {
+  HomeAssistant,
+  ParsedPeriod,
+  Passage,
+  PassageKind,
+  PetInfo,
+} from "./types";
+import {
+  EMPTY_TIMELINE,
+  historyMessage,
+  isPassage,
+  knownCatPassages,
+  parseTimeline,
+  timelineRows,
+  type HistoryResponse,
+  type TimelineData,
+  type TimelineRow,
+} from "../utils/history";
 import {
   axisTicks,
   dayWindow,
@@ -17,12 +39,23 @@ import {
 /** Default number of past days reachable with ◄ (HA recorder keeps 10 days). */
 export const DEFAULT_HISTORY_DAYS = 10;
 
+const KIND_KEY = {
+  in: "history.kind_in",
+  out: "history.kind_out",
+  in_attempt: "history.kind_in_attempt",
+  out_attempt: "history.kind_out_attempt",
+  unknown: "history.kind_unknown",
+} as const;
+
+type TimelineEvent = ParsedPeriod | Passage;
+
 class OnlyCatActivityHistory extends LitElement {
   @property({ attribute: false }) public hass!: HomeAssistant;
   @property() public eventEntityId!: string;
   @property() public contrabandEntityId!: string;
   @property() public humanEntityId!: string;
   @property() public lockEntityId?: string;
+  @property({ attribute: false }) public pets: PetInfo[] = [];
   /** How many days back the user may navigate. */
   @property({ type: Number }) public historyDays = DEFAULT_HISTORY_DAYS;
 
@@ -30,8 +63,7 @@ class OnlyCatActivityHistory extends LitElement {
   @state() private _loading = false;
   @state() private _hasFetched = false;
   @state() private _error: string | null = null;
-  @state() private _data: ParsedPeriod[][] = [[], [], []];
-  @state() private _lockData: ParsedPeriod[] = [];
+  @state() private _data: TimelineData = EMPTY_TIMELINE;
   /** Window the displayed data was fetched for; bars and axis both use it. */
   @state() private _window: TimeWindow | null = null;
   /** 0 = current day, 1 = one day back, etc. */
@@ -40,9 +72,7 @@ class OnlyCatActivityHistory extends LitElement {
     centerTs: number;
     highlightStartTs: number;
     highlightEndTs: number;
-    color: string;
-    label: string;
-    rowIndex: number;
+    rowKey: string;
     eventIndex: number;
   } | null = null;
   private _zoomTimer?: ReturnType<typeof setTimeout>;
@@ -77,29 +107,38 @@ class OnlyCatActivityHistory extends LitElement {
   private async _load() {
     const requestId = ++this._requestId;
     const win = this._targetWindow();
+    // Pets are read when the request starts: the response is parsed against
+    // the trackers it was asked for.
+    const pets = this.pets;
     this._loading = true;
     this._error = null;
     try {
-      // Rows 0–2 (event, contraband, human) then the lock sensor; entities
-      // that could not be resolved are left out of the query.
-      const ids = [
-        this.eventEntityId,
-        this.contrabandEntityId,
-        this.humanEntityId,
-        this.lockEntityId ?? "",
-      ];
-      const queried = ids.filter((id) => !!id);
+      // Entities that could not be resolved are left out of the query.
+      const ids = {
+        event: this.eventEntityId,
+        contraband: this.contrabandEntityId,
+        human: this.humanEntityId,
+        lock: this.lockEntityId,
+      };
+      const queried = [
+        ...Object.values(ids),
+        ...pets.map((p) => p.entityId),
+      ].filter((id): id is string => !!id);
       const raw = queried.length
-        ? await this.hass.callApi<HistoryEntry[][]>(
-            "GET",
-            historyPath(queried, win.start, win.end),
+        ? await this.hass.callWS<HistoryResponse>(
+            historyMessage(queried, win.start, win.end),
           )
-        : [];
+        : {};
       if (requestId !== this._requestId) return;
 
-      const result = parseHistory(raw, ids, win.end);
-      this._data = [result[0], result[1], result[2]];
-      this._lockData = result[3];
+      this._data = parseTimeline(
+        raw,
+        ids,
+        pets,
+        isOutside,
+        win.start,
+        win.end,
+      );
       this._window = win;
       this._zoom = null;
       this._hasFetched = true;
@@ -156,9 +195,49 @@ class OnlyCatActivityHistory extends LitElement {
     return `${fmtTime(startTs)} – ${fmtTime(endTs)} (${durStr})`;
   }
 
+  private _kindLabel(kind: PassageKind): string {
+    return localize(this.hass, KIND_KEY[kind]);
+  }
+
+  /** Names of the known cats in a passage; visitors aren't named. */
+  private _petNames(p: Passage): string[] {
+    return this.pets
+      .filter((pet) => p.rfids.includes(pet.rfid))
+      .map((pet) => pet.name);
+  }
+
+  private _passageTooltip(p: Passage): string {
+    return [
+      this._formatTooltip(p.startTs, p.endTs),
+      this._kindLabel(p.kind),
+      ...this._petNames(p),
+    ].join(" · ");
+  }
+
   disconnectedCallback(): void {
     super.disconnectedCallback();
     clearTimeout(this._zoomTimer);
+  }
+
+  // ── Rows ──────────────────────────────────────────────────────────────────
+
+  private _rows(): TimelineRow[] {
+    // Colors: use inline style so CSS custom properties resolve correctly.
+    // SVG fill="" attribute does NOT evaluate var(), style="" does.
+    return timelineRows(this._data, this.pets, {
+      flap: {
+        label: localize(this.hass, "history.row_flap"),
+        color: "var(--oc-flap-color)",
+      },
+      prey: {
+        label: localize(this.hass, "history.row_prey"),
+        color: "var(--oc-contraband-color)",
+      },
+      human: {
+        label: localize(this.hass, "history.row_human"),
+        color: "var(--oc-human-color)",
+      },
+    });
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -167,28 +246,21 @@ class OnlyCatActivityHistory extends LitElement {
   // frontend (2025.4); the latter no longer exists in current releases but is
   // kept for older ones.
 
-  private _onBarEnter(
-    ev: ParsedPeriod,
-    color: string,
-    label: string,
-    rowIndex: number,
-  ) {
+  private _onBarEnter(row: TimelineRow, ev: TimelineEvent) {
     clearTimeout(this._zoomTimer);
-    const eventIndex = this._data[rowIndex]?.indexOf(ev) ?? 0;
     this._zoom = {
       centerTs: (ev.startTs + ev.endTs) / 2,
       highlightStartTs: ev.startTs,
       highlightEndTs: ev.endTs,
-      color,
-      label,
-      rowIndex,
-      eventIndex,
+      rowKey: row.key,
+      eventIndex: Math.max(0, row.events.indexOf(ev)),
     };
   }
 
   private _zoomNavigate(delta: number) {
     if (!this._zoom) return;
-    const events = this._data[this._zoom.rowIndex];
+    const rowKey = this._zoom.rowKey;
+    const events = this._rows().find((r) => r.key === rowKey)?.events ?? [];
     const newIdx = this._zoom.eventIndex + delta;
     if (newIdx < 0 || newIdx >= events.length) return;
     const ev = events[newIdx];
@@ -215,33 +287,25 @@ class OnlyCatActivityHistory extends LitElement {
 
   private _onBarPointerEnter(
     e: PointerEvent,
-    ev: ParsedPeriod,
-    color: string,
-    label: string,
-    rowIndex: number,
+    row: TimelineRow,
+    ev: TimelineEvent,
   ) {
     if (e.pointerType !== "mouse") return;
     e.stopPropagation();
-    this._onBarEnter(ev, color, label, rowIndex);
+    this._onBarEnter(row, ev);
   }
 
-  private _onBarClick(
-    e: Event,
-    ev: ParsedPeriod,
-    color: string,
-    label: string,
-    rowIndex: number,
-  ) {
+  private _onBarClick(e: Event, row: TimelineRow, ev: TimelineEvent) {
     e.stopPropagation();
     const isMouse = (e as PointerEvent).pointerType === "mouse";
     const sameBar =
-      this._zoom?.rowIndex === rowIndex &&
+      this._zoom?.rowKey === row.key &&
       this._zoom.highlightStartTs === ev.startTs &&
       this._zoom.highlightEndTs === ev.endTs;
     if (sameBar && !isMouse) {
       this._closeZoom();
     } else {
-      this._onBarEnter(ev, color, label, rowIndex);
+      this._onBarEnter(row, ev);
     }
   }
 
@@ -254,7 +318,57 @@ class OnlyCatActivityHistory extends LitElement {
     this._zoom = null;
   }
 
-  private _renderZoom() {
+  /**
+   * One timeline bar. Passages take their direction's color; attempts that
+   * didn't cross the flap are hollow with a dashed outline.
+   */
+  private _renderBar(
+    row: TimelineRow,
+    ev: TimelineEvent,
+    x: number,
+    w: number,
+    opacity: string,
+    interactive: boolean,
+  ) {
+    const passage = isPassage(ev) ? ev : null;
+    const color = passage ? PASSAGE_COLOR[passage.kind] : row.color;
+    const title = passage
+      ? this._passageTooltip(passage)
+      : this._formatTooltip(ev.startTs, ev.endTs);
+    const style =
+      passage && isAttempt(passage.kind)
+        ? `fill: ${color}; fill-opacity: 0.2; stroke: ${color}; stroke-width: 1.5; stroke-dasharray: 3 2;`
+        : `fill: ${color}; stroke: var(--card-background-color, #fff); stroke-opacity: 0.5; stroke-width: 0.5;`;
+    return svg`<g
+        class="event-bar"
+        @pointerenter=${interactive
+          ? (e: PointerEvent) => this._onBarPointerEnter(e, row, ev)
+          : null}
+        @click=${interactive ? (e: Event) => this._onBarClick(e, row, ev) : null}
+      >
+      <title>${title}</title>
+      <rect x="${x}" y="4" width="${w}" height="20" rx="3"
+        style="${style}" opacity="${opacity}" />
+    </g>`;
+  }
+
+  /** Pet rows: the periods spent outside, as a thin band under the bars. */
+  private _renderOutside(
+    row: TimelineRow,
+    toX: (p: ParsedPeriod) => [number, number],
+  ) {
+    const label = localize(this.hass, "history.outside");
+    return (row.background ?? []).map((b) => {
+      const [x, x2] = toX(b);
+      return svg`<g>
+        <title>${label} ${this._formatTooltip(b.startTs, b.endTs)}</title>
+        <rect x="${x}" y="9" width="${Math.max(1, x2 - x)}" height="10"
+          rx="2" class="outside-bar" style="fill: ${row.color};" />
+      </g>`;
+    });
+  }
+
+  private _renderZoom(row: TimelineRow) {
     const zoom = this._zoom!;
     // Adaptive zoom: window = 30× event duration, clamped between 30 min and 120 min.
     // Short events (2s) get a 30-min window; long events (3min) get 120min.
@@ -263,6 +377,8 @@ class OnlyCatActivityHistory extends LitElement {
     const zStartTs = zoom.centerTs - windowMs / 2;
     const zEndTs = zoom.centerTs + windowMs / 2;
     const range = windowMs;
+    const toX = (ts: number) =>
+      Math.min(600, Math.max(0, ((ts - zStartTs) / range) * 600));
 
     const fmtTime = (ts: number) =>
       formatTime(ts, this._timeZone, this._lang, this._amPm, true);
@@ -279,17 +395,20 @@ class OnlyCatActivityHistory extends LitElement {
             durS % 60 ? " " + (durS % 60) + "s" : ""
           }`;
 
-    // Show unlock icon if this event row period overlaps a lock activation
+    // Show unlock icon if this passage overlaps a lock activation
     const OVERLAP_TOLERANCE_MS = 30_000;
     const isUnlockTriggered =
-      zoom.rowIndex === 0 &&
-      this._lockData.some(
+      row.passages &&
+      this._data.lock.some(
         (lp) =>
           lp.startTs <= zoom.highlightEndTs + OVERLAP_TOLERANCE_MS &&
           lp.endTs >= zoom.highlightStartTs - OVERLAP_TOLERANCE_MS,
       );
 
-    const events = this._data[zoom.rowIndex] ?? [];
+    const events = row.events;
+    const current = events[zoom.eventIndex];
+    const passage = current && isPassage(current) ? current : null;
+    const names = passage ? this._petNames(passage) : [];
     const visible = events.filter(
       (e) => e.endTs >= zStartTs && e.startTs <= zEndTs,
     );
@@ -303,6 +422,18 @@ class OnlyCatActivityHistory extends LitElement {
         <div class="zoom-header-info">
           <span class="zoom-time">${fmtTime(zoom.highlightStartTs)}</span>
           <span class="zoom-dur">${durStr}</span>
+          ${passage && passage.kind !== "unknown"
+            ? html`<span
+                class="zoom-kind"
+                style="color: ${PASSAGE_COLOR[passage.kind]}"
+              >
+                <ha-icon icon="${PASSAGE_ICON[passage.kind]}"></ha-icon>
+                ${this._kindLabel(passage.kind)}
+              </span>`
+            : nothing}
+          ${names.length
+            ? html`<span class="zoom-pets">${names.join(", ")}</span>`
+            : nothing}
           ${isUnlockTriggered
             ? html`<ha-icon
                 icon="mdi:lock-open-variant"
@@ -325,8 +456,7 @@ class OnlyCatActivityHistory extends LitElement {
           </button>
           <button
             class="nav-btn zoom-nav-btn"
-            ?disabled=${zoom.eventIndex >=
-            (this._data[zoom.rowIndex]?.length ?? 0) - 1}
+            ?disabled=${zoom.eventIndex >= events.length - 1}
             @click=${(e: Event) => {
               e.stopPropagation();
               this._zoomNavigate(1);
@@ -348,21 +478,14 @@ class OnlyCatActivityHistory extends LitElement {
         </div>
         <div class="zoom-track">
           <svg class="zoom-svg" viewBox="0 0 600 28" preserveAspectRatio="none">
+            ${this._renderOutside(row, (b) => [toX(b.startTs), toX(b.endTs)])}
             ${visible.map((ev) => {
-              const x = Math.max(0, ((ev.startTs - zStartTs) / range) * 600);
-              const x2 = Math.min(600, ((ev.endTs - zStartTs) / range) * 600);
-              const w = Math.max(4, x2 - x);
+              const x = toX(ev.startTs);
+              const w = Math.max(4, toX(ev.endTs) - x);
               const isHl =
                 ev.startTs === zoom.highlightStartTs &&
                 ev.endTs === zoom.highlightEndTs;
-              return svg`<g>
-                <title>${this._formatTooltip(ev.startTs, ev.endTs)}</title>
-                <rect
-                  x="${x}" y="4" width="${w}" height="20" rx="3"
-                  style="fill: ${zoom.color}; stroke: var(--card-background-color, #fff); stroke-opacity: 0.6; stroke-width: 1;"
-                  opacity="${isHl ? "1" : "0.35"}"
-                />
-              </g>`;
+              return this._renderBar(row, ev, x, w, isHl ? "1" : "0.35", false);
             })}
           </svg>
         </div>
@@ -375,25 +498,46 @@ class OnlyCatActivityHistory extends LitElement {
     `;
   }
 
+  private _renderLegend() {
+    const passages = knownCatPassages(this._data.passages, this.pets);
+    const hasDirection = passages.some((p) => p.kind !== "unknown");
+    const hasAttempt = passages.some((p) => isAttempt(p.kind));
+    if (!hasDirection && !this.pets.length) return nothing;
+    return html`
+      <div class="chart-legend">
+        ${hasDirection
+          ? (["in", "out"] as PassageKind[]).map(
+              (k) =>
+                html`<span class="legend-item">
+                  <span
+                    class="legend-swatch"
+                    style="background: ${PASSAGE_COLOR[k]}"
+                  ></span>
+                  ${this._kindLabel(k)}
+                </span>`,
+            )
+          : nothing}
+        ${hasAttempt
+          ? html`<span class="legend-item">
+              <span class="legend-swatch legend-swatch--attempt"></span>
+              ${localize(this.hass, "history.attempt")}
+            </span>`
+          : nothing}
+        ${this.pets.length
+          ? html`<span class="legend-item">
+              <span class="legend-swatch legend-swatch--outside"></span>
+              ${localize(this.hass, "history.outside")}
+            </span>`
+          : nothing}
+      </div>
+    `;
+  }
+
   private _renderChart(win: TimeWindow) {
-    // Colors: use inline style so CSS custom properties resolve correctly.
-    // SVG fill="" attribute does NOT evaluate var(), style="" does.
-    const rows: { label: string; color: string; events: ParsedPeriod[] }[] = [
-      {
-        label: localize(this.hass, "history.row_flap"),
-        color: "var(--oc-flap-color)",
-        events: this._data[0] ?? [],
-      },
-      {
-        label: localize(this.hass, "history.row_prey"),
-        color: "var(--oc-contraband-color)",
-        events: this._data[1] ?? [],
-      },
-      {
-        label: localize(this.hass, "history.row_human"),
-        color: "var(--oc-human-color)",
-        events: this._data[2] ?? [],
-      },
+    const rows = this._rows();
+    const toX = (b: ParsedPeriod): [number, number] => [
+      windowFraction(win, b.startTs) * 600,
+      windowFraction(win, b.endTs) * 600,
     ];
 
     return html`
@@ -420,9 +564,12 @@ class OnlyCatActivityHistory extends LitElement {
 
         <div class="chart-rows ${this._loading ? "chart-rows--loading" : ""}">
           ${rows.map(
-            (row, rowIndex) => html`
+            (row) => html`
               <div class="chart-row">
-                <span class="chart-label" style="color: ${row.color}"
+                <span
+                  class="chart-label"
+                  style="color: ${row.color}"
+                  title="${row.label}"
                   >${row.label}</span
                 >
                 <div class="chart-track">
@@ -432,47 +579,23 @@ class OnlyCatActivityHistory extends LitElement {
                     preserveAspectRatio="none"
                     @pointerleave=${this._onPointerLeave}
                   >
+                    ${this._renderOutside(row, toX)}
                     ${row.events.map((ev) => {
-                      const start = windowFraction(win, ev.startTs);
-                      const end = windowFraction(win, ev.endTs);
-                      const x = start * 600;
-                      const w = Math.max(4, (end - start) * 600);
-                      return svg`<g
-                          class="event-bar"
-                          @pointerenter=${(e: PointerEvent) =>
-                            this._onBarPointerEnter(
-                              e,
-                              ev,
-                              row.color,
-                              row.label,
-                              rowIndex,
-                            )}
-                          @click=${(e: Event) =>
-                            this._onBarClick(
-                              e,
-                              ev,
-                              row.color,
-                              row.label,
-                              rowIndex,
-                            )}
-                        >
-                        <title>${this._formatTooltip(ev.startTs, ev.endTs)}</title>
-                        <rect
-                          x="${x}"
-                          y="4"
-                          width="${w}"
-                          height="20"
-                          rx="3"
-                          style="fill: ${row.color}; stroke: var(--card-background-color, #fff); stroke-opacity: 0.5; stroke-width: 0.5;"
-                          opacity="0.85"
-                        />
-                      </g>`;
+                      const [x, x2] = toX(ev);
+                      return this._renderBar(
+                        row,
+                        ev,
+                        x,
+                        Math.max(4, x2 - x),
+                        "0.85",
+                        true,
+                      );
                     })}
                   </svg>
                 </div>
                 <span class="chart-count">${row.events.length}</span>
-                ${this._zoom?.rowIndex === rowIndex
-                  ? this._renderZoom()
+                ${this._zoom?.rowKey === row.key
+                  ? this._renderZoom(row)
                   : nothing}
               </div>
             `,
@@ -489,6 +612,7 @@ class OnlyCatActivityHistory extends LitElement {
           </div>
           <div></div>
         </div>
+        ${this._renderLegend()}
       </div>
     `;
   }
@@ -754,7 +878,7 @@ background: var(--secondary-background-color);
 
     .chart-row {
       display: grid;
-      grid-template-columns: 52px 1fr 28px;
+      grid-template-columns: 64px 1fr 28px;
       align-items: center;
       gap: 6px;
       position: relative;
@@ -766,6 +890,13 @@ background: var(--secondary-background-color);
       text-align: right;
       text-transform: uppercase;
       letter-spacing: 0.03em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .outside-bar {
+      opacity: 0.28;
     }
 
     .chart-track {
@@ -798,7 +929,7 @@ background: var(--secondary-background-color);
 
     .chart-axis {
       display: grid;
-      grid-template-columns: 52px 1fr 28px;
+      grid-template-columns: 64px 1fr 28px;
       gap: 6px;
       margin-top: 4px;
       font-size: 0.7rem;
@@ -823,7 +954,7 @@ background: var(--secondary-background-color);
       position: absolute;
       top: 50%;
       transform: translateY(-50%);
-      left: 58px;
+      left: 70px;
       right: 34px;
       z-index: 10;
       background: var(--card-background-color);
@@ -902,6 +1033,24 @@ background: var(--secondary-background-color);
       display: block;
     }
 
+    .zoom-kind {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+
+    .zoom-kind ha-icon {
+      --mdc-icon-size: 14px;
+    }
+
+    .zoom-pets {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--primary-text-color);
+    }
+
     .zoom-axis {
       display: flex;
       justify-content: space-between;
@@ -909,6 +1058,41 @@ background: var(--secondary-background-color);
       font-size: 0.62rem;
       color: var(--secondary-text-color);
       opacity: 0.7;
+    }
+
+    /* ── Legend ──────────────────────────────────────────── */
+    .chart-legend {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 4px 12px;
+      margin-top: 6px;
+      font-size: 0.7rem;
+      color: var(--secondary-text-color);
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .legend-swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    .legend-swatch--attempt {
+      border: 1.5px dashed var(--secondary-text-color);
+      box-sizing: border-box;
+    }
+
+    .legend-swatch--outside {
+      height: 5px;
+      background: var(--secondary-text-color);
+      opacity: 0.4;
     }
   `;
 }

@@ -6,7 +6,7 @@ import type { HomeAssistant } from "../src/components/types";
 const EVENT = "binary_sensor.oc_x_event";
 
 interface Pending {
-  path: string;
+  msg: Record<string, unknown>;
   resolve: (v: unknown) => void;
 }
 
@@ -15,13 +15,13 @@ function makeHass(pending: Pending[]): HomeAssistant {
     states: {},
     config: { time_zone: "Europe/Paris" },
     locale: { language: "en", time_format: "24", time_zone: "server" },
-    callApi: (_method: string, path: string) =>
-      new Promise((resolve) => pending.push({ path, resolve })),
+    callWS: (msg: Record<string, unknown>) =>
+      new Promise((resolve) => pending.push({ msg, resolve })),
     callService: async () => undefined,
   } as unknown as HomeAssistant;
 }
 
-const dayOf = (path: string) => path.split("/")[2].split("?")[0];
+const dayOf = (p: Pending) => p.msg.start_time;
 const flush = () => new Promise((r) => setTimeout(r, 0));
 
 describe("onlycat-activity-history navigation", () => {
@@ -54,7 +54,7 @@ describe("onlycat-activity-history navigation", () => {
   it("ignores a stale response and keeps header and data in sync", async () => {
     (root().querySelector(".history-toggle") as HTMLButtonElement).click();
     expect(pending).toHaveLength(1);
-    pending[0].resolve([]);
+    pending[0].resolve({});
     await flush();
     await el.updateComplete;
 
@@ -67,7 +67,7 @@ describe("onlycat-activity-history navigation", () => {
     navButtons()[0].click();
     expect(pending).toHaveLength(2);
 
-    pending[1].resolve([]);
+    pending[1].resolve({});
     await flush();
     await el.updateComplete;
     expect(root().querySelector(".nav-label")!.textContent).toContain("14");
@@ -81,15 +81,15 @@ describe("onlycat-activity-history navigation", () => {
     expect(pending).toHaveLength(4); // request #4 for the same day
 
     const newer = Date.parse("2026-06-15T09:00:00Z") / 1000;
-    pending[3].resolve([
-      [
-        { entity_id: EVENT, state: "off", last_changed: "2026-06-14T22:00:00Z" },
-        { s: "on", lc: newer },
-        { s: "off", lc: newer + 10 },
+    pending[3].resolve({
+      [EVENT]: [
+        { s: "off", lu: newer - 3600 },
+        { s: "on", lu: newer },
+        { s: "off", lu: newer + 10 },
       ],
-    ]);
+    });
     await flush();
-    pending[2].resolve([]); // stale, must be dropped
+    pending[2].resolve({}); // stale, must be dropped
     await flush();
     await el.updateComplete;
     expect(root().querySelector(".chart-count")!.textContent).toBe("1");
@@ -97,16 +97,16 @@ describe("onlycat-activity-history navigation", () => {
 
   it("queries calendar days of the HA time zone and stops at historyDays", async () => {
     (root().querySelector(".history-toggle") as HTMLButtonElement).click();
-    expect(dayOf(pending[0].path)).toBe("2026-06-14T22:00:00.000Z");
+    expect(dayOf(pending[0])).toBe("2026-06-14T22:00:00.000Z");
     for (let i = 0; i < 2; i++) {
-      pending[pending.length - 1].resolve([]);
+      pending[pending.length - 1].resolve({});
       await flush();
       await el.updateComplete;
       navButtons()[0].click();
       await el.updateComplete;
     }
-    expect(dayOf(pending[2].path)).toBe("2026-06-12T22:00:00.000Z");
-    pending[2].resolve([]);
+    expect(dayOf(pending[2])).toBe("2026-06-12T22:00:00.000Z");
+    pending[2].resolve({});
     await flush();
     await el.updateComplete;
     expect(navButtons()[0].disabled).toBe(true);
@@ -117,13 +117,13 @@ describe("onlycat-activity-history navigation", () => {
   it("toggles the zoom on tap and ignores touch-emulated hover", async () => {
     (root().querySelector(".history-toggle") as HTMLButtonElement).click();
     const on = Date.parse("2026-06-15T07:00:00Z") / 1000;
-    pending[0].resolve([
-      [
-        { entity_id: EVENT, state: "off", last_changed: "2026-06-14T22:00:00Z" },
-        { s: "on", lc: on },
-        { s: "off", lc: on + 30 },
+    pending[0].resolve({
+      [EVENT]: [
+        { s: "off", lu: on - 3600 },
+        { s: "on", lu: on },
+        { s: "off", lu: on + 30 },
       ],
-    ]);
+    });
     await flush();
     await el.updateComplete;
     const bar = () => root().querySelector(".event-bar")!;
