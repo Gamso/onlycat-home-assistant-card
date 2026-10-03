@@ -44,6 +44,8 @@ export interface OnlyCatCardConfig {
   name?: string;
   device_id: string;
   show_title?: boolean;
+  /** Number of past days reachable in the history frise (default 10). */
+  history_days?: number;
 }
 
 export type HistoryStateFull = {
@@ -57,11 +59,8 @@ export type HistoryStateMinimal = { s: string; lc?: number; lu?: number };
 
 export type HistoryEntry = HistoryStateFull | HistoryStateMinimal;
 
+/** One "on" period of a binary sensor (epoch ms). */
 export interface ParsedPeriod {
-  /** 0–1 fraction within the query range */
-  start: number;
-  end: number;
-  /** Actual ms timestamps for tooltip display */
   startTs: number;
   endTs: number;
 }

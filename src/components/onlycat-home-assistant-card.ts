@@ -2,7 +2,7 @@ import { LitElement, html, nothing, css } from "lit";
 import { property, state } from "lit/decorators.js";
 import "./onlycat-home-assistant-card-editor";
 import "./onlycat-camera-panel";
-import "./onlycat-activity-history";
+import { DEFAULT_HISTORY_DAYS } from "./onlycat-activity-history";
 import { localize, localizeFormat } from "../localize/localize";
 import type { HomeAssistant, OnlyCatCardConfig } from "./types";
 
@@ -71,6 +71,9 @@ class OnlyCatHomeAssistantCard extends LitElement {
       name: config.name ?? "",
       device_id: config.device_id ?? "",
       show_title: config.show_title !== false,
+      ...(config.history_days !== undefined
+        ? { history_days: config.history_days }
+        : {}),
     };
   }
 
@@ -324,7 +327,7 @@ class OnlyCatHomeAssistantCard extends LitElement {
             .contrabandEntityId=${this._contrabandEntityId}
             .humanEntityId=${this._humanEntityId}
             .lockEntityId=${this._lockEntityId}
-            .historyHours=${24}
+            .historyDays=${this._config.history_days ?? DEFAULT_HISTORY_DAYS}
           ></onlycat-activity-history>
         </div>
       </ha-card>
