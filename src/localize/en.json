@@ -20,7 +20,8 @@
   },
   "camera": {
     "title": "Last activity",
-    "stream_unavailable": "Stream unavailable."
+    "stream_unavailable": "Stream unavailable.",
+    "open": "Open the last activity video"
   },
   "history": {
     "title": "Activity history",
@@ -39,7 +40,8 @@
     "just_now": "just now",
     "minutes_ago": "{n} min ago",
     "hours_ago": "{h}h ago",
-    "hours_minutes_ago": "{h}h{m} ago"
+    "hours_minutes_ago": "{h}h{m} ago",
+    "days_ago": "{d}d ago"
   },
   "confirm_restart": {
     "title": "Confirm restart",

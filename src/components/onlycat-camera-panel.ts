@@ -1,6 +1,7 @@
 import { LitElement, html, nothing, css } from "lit";
 import { property } from "lit/decorators.js";
-import { localize, localizeFormat } from "../localize/localize";
+import { localize } from "../localize/localize";
+import { formatRelativeTime, safeCameraUrl } from "../utils/camera";
 import type { HomeAssistant } from "./types";
 
 class OnlyCatCameraPanel extends LitElement {
@@ -12,21 +13,30 @@ class OnlyCatCameraPanel extends LitElement {
   @property() public contrabandEntityId?: string;
   @property() public lastActivityEntityId?: string;
 
+  /** Re-renders every minute so the "x min ago" label stays current. */
+  private _clockTimer?: ReturnType<typeof setInterval>;
+
+  connectedCallback(): void {
+    super.connectedCallback();
+    this._clockTimer = setInterval(() => this.requestUpdate(), 60_000);
+  }
+
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+    clearInterval(this._clockTimer);
+  }
+
   private _entity() {
     return this.hass?.states?.[this.entityId];
   }
 
   /**
-   * HA sets `entity_picture` on every camera entity automatically.
-   * It is a relative URL (/api/camera_proxy/…?token=…) that the browser
-   * resolves against the current HA origin — no need to reconstruct it.
-   * Using it directly is exactly what HA's own camera card does.
+   * HA sets `entity_picture` on every camera entity automatically: a relative
+   * URL (/api/camera_proxy/…?token=…) resolved against the HA origin, with a
+   * token HA renews. Anything else is ignored (see safeCameraUrl).
    */
   private _getSnapshotUrl(): string | null {
-    const ep = this._entity()?.attributes?.entity_picture as
-      | string
-      | undefined;
-    return ep ?? null;
+    return safeCameraUrl(this._entity()?.attributes?.entity_picture);
   }
 
   /** Open the HA built-in more-info dialog for the camera entity (shows the HLS video stream). */
@@ -43,25 +53,15 @@ class OnlyCatCameraPanel extends LitElement {
   /**
    * Returns the timestamp (ms) of the most recent activity.
    * Priority:
-   *   1. lastActivity image entity (if available)
-   *   2. event, human, contraband sensors
+   *   1. last activity image entity: an image entity's state is the ISO time
+   *      of its last image ("unavailable"/"unknown" fall through);
+   *   2. last change of the event, human, contraband sensors.
    */
   private _latestActivityTs(): number | null {
-    // Home Assistant image entities expose their capture time in `state`.
-    // Keep a few attribute fallbacks for integration-specific implementations.
     if (this.lastActivityEntityId) {
-      const imageEntity = this.hass?.states?.[this.lastActivityEntityId];
-      if (imageEntity) {
-        const dateStr =
-          imageEntity.state ||
-          imageEntity.attributes?.datetime ||
-          imageEntity.attributes?.last_activity ||
-          imageEntity.attributes?.created_at;
-        const ms = new Date(dateStr as string).getTime();
-        if (!isNaN(ms)) {
-          return ms;
-        }
-      }
+      const state = this.hass?.states?.[this.lastActivityEntityId]?.state;
+      const ms = state ? new Date(state).getTime() : NaN;
+      if (!isNaN(ms)) return ms;
     }
     // 2. Fallback to event, human, contraband sensors
     const ids = [
@@ -82,32 +82,29 @@ class OnlyCatCameraPanel extends LitElement {
     return latest;
   }
 
-  private _relativeTime(isoString?: string): string {
-    if (!isoString) return "";
-    const dt = new Date(isoString);
-    if (isNaN(dt.getTime())) return "";
-    const diff = Math.round((Date.now() - dt.getTime()) / 60000);
-    if (diff < 1) return localize(this.hass, "time.just_now");
-    if (diff < 60)
-      return localizeFormat(this.hass, "time.minutes_ago", { n: diff });
-    const h = Math.floor(diff / 60);
-    const m = diff % 60;
-    if (m === 0) return localizeFormat(this.hass, "time.hours_ago", { h });
-    return localizeFormat(this.hass, "time.hours_minutes_ago", {
-      h,
-      m: String(m).padStart(2, "0"),
-    });
+  private _onKeyDown(ev: KeyboardEvent) {
+    if (ev.key === "Enter" || ev.key === " ") {
+      ev.preventDefault();
+      this._openMoreInfo();
+    }
   }
 
   protected render() {
     const imgUrl = this._getSnapshotUrl();
     const lastActivityTs = this._latestActivityTs();
+    const unavailable = this._entity()?.state === "unavailable";
 
     return html`
       <div
         class="camera-panel ${imgUrl ? "camera-panel--clickable" : ""}"
+        role=${imgUrl ? "button" : nothing}
+        tabindex=${imgUrl ? "0" : nothing}
+        aria-label=${imgUrl ? localize(this.hass, "camera.open") : nothing}
         @click=${() => {
           if (imgUrl) this._openMoreInfo();
+        }}
+        @keydown=${(ev: KeyboardEvent) => {
+          if (imgUrl) this._onKeyDown(ev);
         }}
       >
         ${imgUrl
@@ -121,8 +118,10 @@ class OnlyCatCameraPanel extends LitElement {
                 <ha-icon icon="mdi:play-circle-outline"></ha-icon>
                 ${lastActivityTs !== null
                   ? html`<span class="camera-ts"
-                      >${this._relativeTime(
-                        new Date(lastActivityTs).toISOString(),
+                      >${formatRelativeTime(
+                        this.hass,
+                        lastActivityTs,
+                        Date.now(),
                       )}</span
                     >`
                   : nothing}
@@ -130,8 +129,14 @@ class OnlyCatCameraPanel extends LitElement {
             `
           : html`
               <div class="camera-placeholder">
-                <ha-icon icon="mdi:paw"></ha-icon>
-                <span>${localize(this.hass, "card.no_recent_activity")}</span>
+                <ha-icon
+                  icon=${unavailable ? "mdi:video-off-outline" : "mdi:paw"}
+                ></ha-icon>
+                <span
+                  >${unavailable
+                    ? localize(this.hass, "camera.stream_unavailable")
+                    : localize(this.hass, "card.no_recent_activity")}</span
+                >
               </div>
             `}
       </div>
@@ -159,7 +164,13 @@ class OnlyCatCameraPanel extends LitElement {
       cursor: pointer;
     }
 
-    .camera-panel--clickable:hover .camera-overlay {
+    .camera-panel--clickable:focus-visible {
+      outline: 2px solid var(--primary-color);
+      outline-offset: 2px;
+    }
+
+    .camera-panel--clickable:hover .camera-overlay,
+    .camera-panel--clickable:focus-visible .camera-overlay {
       background: linear-gradient(transparent, rgba(0, 0, 0, 0.75));
     }
 
