@@ -5,6 +5,11 @@ import "./onlycat-camera-panel";
 import { DEFAULT_HISTORY_DAYS } from "./onlycat-activity-history";
 import { localize, localizeFormat } from "../localize/localize";
 import type { HomeAssistant, OnlyCatCardConfig } from "./types";
+import {
+  isConfigured,
+  resolveEntities,
+  type ResolvedEntities,
+} from "../utils/entities";
 
 class OnlyCatHomeAssistantCard extends LitElement {
   @property({ attribute: false }) public hass!: HomeAssistant;
@@ -12,51 +17,15 @@ class OnlyCatHomeAssistantCard extends LitElement {
 
   @state() private _showRebootConfirm = false;
 
-  // ── Entity ID helpers ──────────────────────────────────────────────────────
-
-  private get _deviceId() {
-    return this._config?.device_id ?? "";
-  }
-  private get _cameraEntityId() {
-    return `camera.${this._deviceId}_last_activity_video`;
-  }
-  private get _lockEntityId() {
-    return `binary_sensor.${this._deviceId}_lock`;
-  }
-  private get _connectivityEntityId() {
-    return `binary_sensor.${this._deviceId}_connectivity`;
-  }
-  private get _policyEntityId() {
-    return `select.${this._deviceId}_policy`;
-  }
-  private get _unlockEntityId() {
-    return `button.${this._deviceId}_unlock`;
-  }
-  private get _rebootEntityId() {
-    return `button.${this._deviceId}_reboot`;
-  }
-  private get _eventEntityId() {
-    return `binary_sensor.${this._deviceId}_event`;
-  }
-  private get _contrabandEntityId() {
-    return `binary_sensor.${this._deviceId}_contraband`;
-  }
-  private get _humanEntityId() {
-    return `binary_sensor.${this._deviceId}_human`;
-  }
-  private get _lastActivityEntityId() {
-    return `image.${this._deviceId}_last_activity_image`;
-  }
-  private get _errorsEntityId() {
-    return `binary_sensor.${this._deviceId}_errors`;
-  }
+  /** Entity ids resolved for the current render (see utils/entities). */
+  private _ids: ResolvedEntities = resolveEntities(undefined, {});
 
   // ── Lifecycle ──────────────────────────────────────────────────────────────
 
   public static getStubConfig(): OnlyCatCardConfig {
     return {
       name: "",
-      device_id: "",
+      device: "",
       show_title: true,
     };
   }
@@ -69,8 +38,10 @@ class OnlyCatHomeAssistantCard extends LitElement {
     if (!config) throw new Error("Invalid configuration.");
     this._config = {
       name: config.name ?? "",
+      device: config.device ?? "",
       device_id: config.device_id ?? "",
       show_title: config.show_title !== false,
+      ...(config.entities ? { entities: { ...config.entities } } : {}),
       ...(config.history_days !== undefined
         ? { history_days: config.history_days }
         : {}),
@@ -105,16 +76,16 @@ class OnlyCatHomeAssistantCard extends LitElement {
   // ── Actions ───────────────────────────────────────────────────────────────
 
   private _onUnlock() {
-    if (!this._entity(this._unlockEntityId)) return;
+    if (!this._entity(this._ids.unlock)) return;
     this.hass.callService("button", "press", {
-      entity_id: this._unlockEntityId,
+      entity_id: this._ids.unlock,
     });
   }
 
   private _onRebootConfirm() {
-    if (!this._entity(this._rebootEntityId)) return;
+    if (!this._entity(this._ids.reboot)) return;
     this.hass.callService("button", "press", {
-      entity_id: this._rebootEntityId,
+      entity_id: this._ids.reboot,
     });
     this._showRebootConfirm = false;
   }
@@ -123,7 +94,7 @@ class OnlyCatHomeAssistantCard extends LitElement {
     const option = (ev.target as HTMLSelectElement).value;
     if (!option) return;
     this.hass.callService("select", "select_option", {
-      entity_id: this._policyEntityId,
+      entity_id: this._ids.policy,
       option,
     });
   }
@@ -131,10 +102,10 @@ class OnlyCatHomeAssistantCard extends LitElement {
   // ── Render helpers ────────────────────────────────────────────────────────
 
   private _renderStatusPills() {
-    const connected = this._isOn(this._connectivityEntityId);
+    const connected = this._isOn(this._ids.connectivity);
     // binary_sensor lock: "on" = unlocked, "off" = locked
-    const locked = !this._isOn(this._lockEntityId);
-    const hasErrors = this._isOn(this._errorsEntityId);
+    const locked = !this._isOn(this._ids.lock);
+    const hasErrors = this._isOn(this._ids.errors);
 
     return html`
       <div class="status-pills">
@@ -168,7 +139,7 @@ class OnlyCatHomeAssistantCard extends LitElement {
   }
 
   private _renderPolicy() {
-    const entity = this._entity(this._policyEntityId);
+    const entity = this._entity(this._ids.policy);
     const options = (entity?.attributes?.options as string[] | undefined) ?? [];
     const current: string = entity?.state ?? "";
 
@@ -280,7 +251,7 @@ class OnlyCatHomeAssistantCard extends LitElement {
 
     const title = this._config.name || localize(this.hass, "card.name_default");
 
-    if (!this._config.device_id) {
+    if (!isConfigured(this._config)) {
       return html`
         <ha-card>
           <div
@@ -296,6 +267,9 @@ class OnlyCatHomeAssistantCard extends LitElement {
         </ha-card>
       `;
     }
+
+    this._ids = resolveEntities(this.hass, this._config);
+    const ids = this._ids;
 
     return html`
       <ha-card>
@@ -314,19 +288,19 @@ class OnlyCatHomeAssistantCard extends LitElement {
         <div class="card-body">
           <onlycat-camera-panel
             .hass=${this.hass}
-            .entityId=${this._cameraEntityId}
-            .eventEntityId=${this._eventEntityId}
-            .humanEntityId=${this._humanEntityId}
-            .contrabandEntityId=${this._contrabandEntityId}
-            .lastActivityEntityId=${this._lastActivityEntityId}
+            .entityId=${ids.camera}
+            .eventEntityId=${ids.event}
+            .humanEntityId=${ids.human}
+            .contrabandEntityId=${ids.contraband}
+            .lastActivityEntityId=${ids.image}
           ></onlycat-camera-panel>
           ${this._renderPolicy()} ${this._renderActions()}
           <onlycat-activity-history
             .hass=${this.hass}
-            .eventEntityId=${this._eventEntityId}
-            .contrabandEntityId=${this._contrabandEntityId}
-            .humanEntityId=${this._humanEntityId}
-            .lockEntityId=${this._lockEntityId}
+            .eventEntityId=${ids.event}
+            .contrabandEntityId=${ids.contraband}
+            .humanEntityId=${ids.human}
+            .lockEntityId=${ids.lock}
             .historyDays=${this._config.history_days ?? DEFAULT_HISTORY_DAYS}
           ></onlycat-activity-history>
         </div>
