@@ -1,5 +1,5 @@
 import { LitElement, html, nothing, css } from "lit";
-import { property, state } from "lit/decorators.js";
+import { property, query, state } from "lit/decorators.js";
 import "./onlycat-home-assistant-card-editor";
 import "./onlycat-camera-panel";
 import { DEFAULT_HISTORY_DAYS } from "./onlycat-activity-history";
@@ -15,7 +15,8 @@ class OnlyCatHomeAssistantCard extends LitElement {
   @property({ attribute: false }) public hass!: HomeAssistant;
   @state() private _config!: OnlyCatCardConfig;
 
-  @state() private _showRebootConfirm = false;
+  @query("dialog.reboot-dialog") private _rebootDialog?: HTMLDialogElement;
+  @query(".action-btn--secondary") private _rebootButton?: HTMLButtonElement;
 
   /** Entity ids resolved for the current render (see utils/entities). */
   private _ids: ResolvedEntities = resolveEntities(undefined, {});
@@ -99,7 +100,7 @@ class OnlyCatHomeAssistantCard extends LitElement {
     this.hass.callService("button", "press", {
       entity_id: this._ids.reboot,
     });
-    this._showRebootConfirm = false;
+    this._closeRebootConfirm();
   }
 
   private _onPolicyChange(ev: Event) {
@@ -219,7 +220,8 @@ class OnlyCatHomeAssistantCard extends LitElement {
         <button
           class="action-btn action-btn--secondary"
           ?disabled=${!this._isAvailable(this._ids.reboot)}
-          @click=${() => (this._showRebootConfirm = true)}
+          aria-haspopup="dialog"
+          @click=${() => this._openRebootConfirm()}
           title="${localize(this.hass, "actions.restart_title")}"
         >
           <ha-icon icon="mdi:restart"></ha-icon>
@@ -229,54 +231,76 @@ class OnlyCatHomeAssistantCard extends LitElement {
     `;
   }
 
-  // ── Modals ────────────────────────────────────────────────────────────────
+  // ── Confirmation dialog ───────────────────────────────────────────────────
+  //
+  // HA's own confirmation dialog (showConfirmationDialog / "dialog-box") is
+  // not reachable from a custom card: it is loaded through a private dynamic
+  // import of the frontend bundle. A native modal <dialog> gives the same
+  // guarantees: rendered in the top layer (no z-index or transformed-parent
+  // issue), background made inert with focus kept inside, Escape closes it,
+  // role "dialog" and focus restored to the trigger on close.
 
-  private _renderRebootModal() {
-    if (!this._showRebootConfirm) return nothing;
+  private _openRebootConfirm() {
+    this._rebootDialog?.showModal();
+  }
+
+  private _closeRebootConfirm() {
+    if (this._rebootDialog?.open) this._rebootDialog.close();
+  }
+
+  private _renderRebootDialog() {
     return html`
-      <div
-        class="modal-backdrop"
+      <dialog
+        class="reboot-dialog"
+        aria-labelledby="reboot-dialog-title"
+        aria-describedby="reboot-dialog-question"
         @click=${(e: Event) => {
-          if (e.target === e.currentTarget) this._showRebootConfirm = false;
+          // A click on the backdrop targets the <dialog> element itself.
+          if (e.target === e.currentTarget) this._closeRebootConfirm();
         }}
+        @close=${() => this._rebootButton?.focus()}
       >
-        <div class="modal modal--confirm" role="dialog" aria-modal="true">
-          <div class="modal-header">
-            <ha-icon
-              icon="mdi:alert-circle"
-              style="color:var(--warning-color,#ff9800)"
-            ></ha-icon>
-            <span>${localize(this.hass, "confirm_restart.title")}</span>
-            <button
-              class="modal-close"
-              @click=${() => (this._showRebootConfirm = false)}
-            >
-              <ha-icon icon="mdi:close"></ha-icon>
-            </button>
-          </div>
-          <div class="modal-body">
-            <p>${localize(this.hass, "confirm_restart.question")}</p>
-            <p class="confirm-note">
-              ${localize(this.hass, "confirm_restart.note")}
-            </p>
-          </div>
-          <div class="modal-footer">
-            <button
-              class="btn btn--cancel"
-              @click=${() => (this._showRebootConfirm = false)}
-            >
-              ${localize(this.hass, "actions.cancel")}
-            </button>
-            <button
-              class="btn btn--danger"
-              @click=${() => this._onRebootConfirm()}
-            >
-              <ha-icon icon="mdi:restart"></ha-icon>
-              ${localize(this.hass, "actions.restart")}
-            </button>
-          </div>
+        <div class="modal-header">
+          <ha-icon
+            icon="mdi:alert-circle"
+            style="color:var(--warning-color,#ff9800)"
+          ></ha-icon>
+          <span id="reboot-dialog-title"
+            >${localize(this.hass, "confirm_restart.title")}</span
+          >
+          <button
+            class="modal-close"
+            aria-label="${localize(this.hass, "actions.cancel")}"
+            @click=${() => this._closeRebootConfirm()}
+          >
+            <ha-icon icon="mdi:close"></ha-icon>
+          </button>
         </div>
-      </div>
+        <div class="modal-body">
+          <p id="reboot-dialog-question">
+            ${localize(this.hass, "confirm_restart.question")}
+          </p>
+          <p class="confirm-note">
+            ${localize(this.hass, "confirm_restart.note")}
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button
+            class="btn btn--cancel"
+            autofocus
+            @click=${() => this._closeRebootConfirm()}
+          >
+            ${localize(this.hass, "actions.cancel")}
+          </button>
+          <button
+            class="btn btn--danger"
+            @click=${() => this._onRebootConfirm()}
+          >
+            <ha-icon icon="mdi:restart"></ha-icon>
+            ${localize(this.hass, "actions.restart")}
+          </button>
+        </div>
+      </dialog>
     `;
   }
 
@@ -342,7 +366,7 @@ class OnlyCatHomeAssistantCard extends LitElement {
         </div>
       </ha-card>
 
-      ${this._renderRebootModal()}
+      ${this._renderRebootDialog()}
     `;
   }
 
@@ -530,39 +554,24 @@ class OnlyCatHomeAssistantCard extends LitElement {
       border: 1px solid var(--divider-color, #ccc);
     }
 
-    /* ── Modals ───────────────────────────────────────────────── */
-    .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.6);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-      animation: fadeIn 0.15s ease;
-    }
-
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-      }
-      to {
-        opacity: 1;
-      }
-    }
-
-    .modal {
-      background: var(--card-background-color);
+    /* ── Confirmation dialog ──────────────────────────────────── */
+    .reboot-dialog {
+      border: none;
+      padding: 0;
       border-radius: 14px;
-      max-width: 520px;
+      max-width: 380px;
       width: 92%;
-      overflow: hidden;
+      background: var(--card-background-color);
+      color: var(--primary-text-color);
       box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    }
+
+    .reboot-dialog[open] {
       animation: slideUp 0.2s ease;
     }
 
-    .modal--confirm {
-      max-width: 380px;
+    .reboot-dialog::backdrop {
+      background: rgba(0, 0, 0, 0.6);
     }
 
     @keyframes slideUp {
