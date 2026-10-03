@@ -156,6 +156,11 @@ class OnlyCatActivityHistory extends LitElement {
     return `${fmtTime(startTs)} – ${fmtTime(endTs)} (${durStr})`;
   }
 
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+    clearTimeout(this._zoomTimer);
+  }
+
   // ── Render ────────────────────────────────────────────────────────────────
 
   private _onBarEnter(
@@ -196,7 +201,53 @@ class OnlyCatActivityHistory extends LitElement {
     clearTimeout(this._zoomTimer);
     this._zoomTimer = setTimeout(() => {
       this._zoom = null;
-    }, 200) as unknown as ReturnType<typeof setTimeout>;
+    }, 200);
+  }
+
+  // Hover opens the zoom with a mouse only: on touch screens (companion app)
+  // the emulated mouseenter fired by a tap is never followed by mouseleave.
+  // A tap (or click) on a bar toggles the zoom instead; the zoom has a close
+  // button.
+
+  private _onBarPointerEnter(
+    e: PointerEvent,
+    ev: ParsedPeriod,
+    color: string,
+    label: string,
+    rowIndex: number,
+  ) {
+    if (e.pointerType !== "mouse") return;
+    e.stopPropagation();
+    this._onBarEnter(ev, color, label, rowIndex);
+  }
+
+  private _onBarClick(
+    e: Event,
+    ev: ParsedPeriod,
+    color: string,
+    label: string,
+    rowIndex: number,
+  ) {
+    e.stopPropagation();
+    const isMouse = (e as PointerEvent).pointerType === "mouse";
+    const sameBar =
+      this._zoom?.rowIndex === rowIndex &&
+      this._zoom.highlightStartTs === ev.startTs &&
+      this._zoom.highlightEndTs === ev.endTs;
+    if (sameBar && !isMouse) {
+      this._closeZoom();
+    } else {
+      this._onBarEnter(ev, color, label, rowIndex);
+    }
+  }
+
+  private _onPointerLeave(e: PointerEvent) {
+    if (e.pointerType === "mouse") this._onBarLeave();
+  }
+
+  private _closeZoom() {
+    clearTimeout(this._zoomTimer);
+    this._zoom = null;
   }
 
   private _renderZoom() {
@@ -242,8 +293,8 @@ class OnlyCatActivityHistory extends LitElement {
     return html`
       <div
         class="zoom-overlay"
-        @mouseenter=${() => clearTimeout(this._zoomTimer)}
-        @mouseleave=${this._onBarLeave}
+        @pointerenter=${() => clearTimeout(this._zoomTimer)}
+        @pointerleave=${this._onPointerLeave}
       >
         <div class="zoom-header-info">
           <span class="zoom-time">${fmtTime(zoom.highlightStartTs)}</span>
@@ -279,6 +330,16 @@ class OnlyCatActivityHistory extends LitElement {
             title="Next event"
           >
             <ha-icon icon="mdi:chevron-right"></ha-icon>
+          </button>
+          <button
+            class="nav-btn zoom-nav-btn zoom-close-btn"
+            @click=${(e: Event) => {
+              e.stopPropagation();
+              this._closeZoom();
+            }}
+            title="Close"
+          >
+            <ha-icon icon="mdi:close"></ha-icon>
           </button>
         </div>
         <div class="zoom-track">
@@ -365,7 +426,7 @@ class OnlyCatActivityHistory extends LitElement {
                     class="chart-svg"
                     viewBox="0 0 600 28"
                     preserveAspectRatio="none"
-                    @mouseleave=${this._onBarLeave}
+                    @pointerleave=${this._onPointerLeave}
                   >
                     ${row.events.map((ev) => {
                       const start = windowFraction(win, ev.startTs);
@@ -374,15 +435,22 @@ class OnlyCatActivityHistory extends LitElement {
                       const w = Math.max(4, (end - start) * 600);
                       return svg`<g
                           class="event-bar"
-                          @mouseenter=${(e: MouseEvent) => {
-                            e.stopPropagation();
-                            this._onBarEnter(
+                          @pointerenter=${(e: PointerEvent) =>
+                            this._onBarPointerEnter(
+                              e,
                               ev,
                               row.color,
                               row.label,
                               rowIndex,
-                            );
-                          }}
+                            )}
+                          @click=${(e: Event) =>
+                            this._onBarClick(
+                              e,
+                              ev,
+                              row.color,
+                              row.label,
+                              rowIndex,
+                            )}
                         >
                         <title>${this._formatTooltip(ev.startTs, ev.endTs)}</title>
                         <rect

@@ -113,4 +113,44 @@ describe("onlycat-activity-history navigation", () => {
     navButtons()[0].click();
     expect(pending).toHaveLength(3);
   });
+
+  it("toggles the zoom on tap and ignores touch-emulated hover", async () => {
+    (root().querySelector(".history-toggle") as HTMLButtonElement).click();
+    const on = Date.parse("2026-06-15T07:00:00Z") / 1000;
+    pending[0].resolve([
+      [
+        { entity_id: EVENT, state: "off", last_changed: "2026-06-14T22:00:00Z" },
+        { s: "on", lc: on },
+        { s: "off", lc: on + 30 },
+      ],
+    ]);
+    await flush();
+    await el.updateComplete;
+    const bar = () => root().querySelector(".event-bar")!;
+    const zoom = () => root().querySelector(".zoom-overlay");
+
+    bar().dispatchEvent(new PointerEvent("pointerenter", { pointerType: "touch" }));
+    await el.updateComplete;
+    expect(zoom()).toBeNull();
+
+    bar().dispatchEvent(new PointerEvent("click", { pointerType: "touch", bubbles: true }));
+    await el.updateComplete;
+    expect(zoom()).not.toBeNull();
+    bar().dispatchEvent(new PointerEvent("click", { pointerType: "touch", bubbles: true }));
+    await el.updateComplete;
+    expect(zoom()).toBeNull();
+
+    bar().dispatchEvent(new PointerEvent("click", { pointerType: "touch", bubbles: true }));
+    await el.updateComplete;
+    (root().querySelector(".zoom-close-btn") as HTMLButtonElement).click();
+    await el.updateComplete;
+    expect(zoom()).toBeNull();
+  });
+
+  it("clears the pending zoom timer when removed", async () => {
+    const clear = vi.spyOn(globalThis, "clearTimeout");
+    el.remove();
+    expect(clear).toHaveBeenCalled();
+    clear.mockRestore();
+  });
 });
