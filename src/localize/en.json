@@ -47,10 +47,29 @@
     "note": "The cat flap will be temporarily offline during the restart."
   },
   "editor": {
-    "card_name": "Card name",
+    "name": "Card name",
     "device": "OnlyCat device",
-    "device_hint": "Select the connectivity sensor of your OnlyCat device",
-
-    "show_title": "Show title"
+    "device_hint": "Device created by the OnlyCat integration",
+    "show_title": "Show title",
+    "entities": "Entities",
+    "entities_hint": "Leave empty to detect them from the device. Only needed for renamed entities.",
+    "advanced": "Advanced",
+    "history_days": "Days of history",
+    "history_days_hint": "How many past days the timeline can browse (default {n})",
+    "device_id": "OnlyCat device id (legacy)",
+    "device_id_hint": "Entity id prefix, e.g. oc_0cbfb5801849. Kept for configurations made before the device picker."
+  },
+  "entity": {
+    "camera": "Last activity video",
+    "image": "Last activity image",
+    "lock": "Lock",
+    "connectivity": "Connectivity",
+    "errors": "Device errors",
+    "event": "Passage event",
+    "contraband": "Prey event",
+    "human": "Human event",
+    "policy": "Door policy",
+    "unlock": "Unlock button",
+    "reboot": "Reboot button"
   }
 }

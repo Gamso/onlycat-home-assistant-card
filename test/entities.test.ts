@@ -102,3 +102,17 @@ describe("resolveDeviceId / isConfigured", () => {
     expect(isConfigured({ entities: { lock: "binary_sensor.x" } })).toBe(true);
   });
 });
+
+describe("resolveEntities with both device and device_id", () => {
+  it("ignores a legacy prefix that belongs to another device", () => {
+    const h = hass(
+      ["binary_sensor.oc_old_lock", "binary_sensor.oc_new_lock"],
+      [
+        { ...reg("binary_sensor.oc_old_lock"), device_id: "other" },
+        reg("binary_sensor.oc_new_lock", "onlycat_lock_sensor"),
+      ],
+    );
+    const ids = resolveEntities(h, { device: DEVICE, device_id: "oc_old" });
+    expect(ids.lock).toBe("binary_sensor.oc_new_lock");
+  });
+});

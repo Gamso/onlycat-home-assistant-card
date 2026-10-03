@@ -4,7 +4,8 @@
 // (prefix = OnlyCat device id, e.g. `oc_0cbfb5801849`). Users may rename them,
 // so ids are resolved in this order for each role:
 //   1. explicit override in the card config (`entities.<role>`);
-//   2. the historical id `<domain>.<device_id>_<suffix>` if it exists;
+//   2. the historical id `<domain>.<device_id>_<suffix>` if it exists (and,
+//      when a HA device is configured, belongs to that device);
 //   3. the entity registry: entity of the HA device, platform "onlycat",
 //      matched by translation key (stable across renames), then by suffix;
 //   4. the historical id even if missing (the card then shows "unavailable").
@@ -118,9 +119,13 @@ export function resolveEntities(
     const inDomain = deviceEntities.filter((e) =>
       e!.entity_id.startsWith(`${domain}.`),
     );
+    const legacyOk =
+      !!legacy &&
+      !!hass?.states?.[legacy] &&
+      (!config.device || hass.entities?.[legacy]?.device_id === config.device);
     out[role] =
       override ||
-      (legacy && hass?.states?.[legacy] ? legacy : "") ||
+      (legacyOk ? legacy : "") ||
       inDomain.find((e) => e!.translation_key === key)?.entity_id ||
       inDomain.find((e) => e!.entity_id.endsWith(`_${suffix}`))?.entity_id ||
       legacy;
