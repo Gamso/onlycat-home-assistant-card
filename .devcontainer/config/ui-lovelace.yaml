@@ -15,6 +15,12 @@ views:
           - entity: input_boolean.oc_event_backing
             name: "Flap passage"
             icon: mdi:cat
+          - entity: input_select.oc_direction_backing
+            name: "Direction"
+          - entity: input_select.oc_action_backing
+            name: "Action"
+          - entity: input_select.oc_pet_backing
+            name: "Pet (RFID)"
           - entity: input_boolean.oc_contraband_backing
             name: "Prey detected (contraband)"
             icon: mdi:rodent
