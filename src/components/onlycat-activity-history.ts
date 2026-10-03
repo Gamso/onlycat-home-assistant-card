@@ -355,7 +355,7 @@ class OnlyCatActivityHistory extends LitElement {
                 <title>${this._formatTooltip(ev.startTs, ev.endTs)}</title>
                 <rect
                   x="${x}" y="4" width="${w}" height="20" rx="3"
-                  style="fill: ${zoom.color}; stroke: rgba(255,255,255,0.6); stroke-width: 1;"
+                  style="fill: ${zoom.color}; stroke: var(--card-background-color, #fff); stroke-opacity: 0.6; stroke-width: 1;"
                   opacity="${isHl ? "1" : "0.35"}"
                 />
               </g>`;
@@ -377,17 +377,17 @@ class OnlyCatActivityHistory extends LitElement {
     const rows: { label: string; color: string; events: ParsedPeriod[] }[] = [
       {
         label: localize(this.hass, "history.row_flap"),
-        color: "var(--history-flap-color, #29b6f6)",
+        color: "var(--oc-flap-color)",
         events: this._data[0] ?? [],
       },
       {
         label: localize(this.hass, "history.row_prey"),
-        color: "var(--history-contraband-color, #e53935)",
+        color: "var(--oc-contraband-color)",
         events: this._data[1] ?? [],
       },
       {
         label: localize(this.hass, "history.row_human"),
-        color: "var(--history-human-color, #ab47bc)",
+        color: "var(--oc-human-color)",
         events: this._data[2] ?? [],
       },
     ];
@@ -459,7 +459,7 @@ class OnlyCatActivityHistory extends LitElement {
                           width="${w}"
                           height="20"
                           rx="3"
-                          style="fill: ${row.color}; stroke: rgba(255,255,255,0.5); stroke-width: 0.5;"
+                          style="fill: ${row.color}; stroke: var(--card-background-color, #fff); stroke-opacity: 0.5; stroke-width: 0.5;"
                           opacity="0.85"
                         />
                       </g>`;
@@ -559,6 +559,18 @@ class OnlyCatActivityHistory extends LitElement {
   static styles = css`
     :host {
       display: block;
+      /* Theme colours; --history-*-color stay available as overrides. */
+      --oc-flap-color: var(--history-flap-color, var(--info-color, #039be5));
+      --oc-contraband-color: var(
+        --history-contraband-color,
+        var(--error-color, #db4437)
+      );
+      --oc-human-color: var(--history-human-color, var(--purple-color, #926bc7));
+      --oc-track-color: color-mix(
+        in srgb,
+        var(--primary-text-color, #212121) 8%,
+        transparent
+      );
     }
 
     /* ── Toggle button ───────────────────────────────── */
@@ -621,18 +633,21 @@ class OnlyCatActivityHistory extends LitElement {
     }
 
     .event-badge--flap {
-      background: rgba(41, 182, 246, 0.15);
-      color: #29b6f6;
+background: var(--secondary-background-color);
+      background: color-mix(in srgb, var(--oc-flap-color) 15%, transparent);
+      color: var(--oc-flap-color);
     }
 
     .event-badge--contraband {
-      background: rgba(229, 57, 53, 0.15);
-      color: #e53935;
+background: var(--secondary-background-color);
+      background: color-mix(in srgb, var(--oc-contraband-color) 15%, transparent);
+      color: var(--oc-contraband-color);
     }
 
     .event-badge--human {
-      background: rgba(171, 71, 188, 0.15);
-      color: #ab47bc;
+background: var(--secondary-background-color);
+      background: color-mix(in srgb, var(--oc-human-color) 15%, transparent);
+      color: var(--oc-human-color);
     }
 
     /* ── Loading / error ─────────────────────────────── */
@@ -748,7 +763,7 @@ class OnlyCatActivityHistory extends LitElement {
 
     .chart-track {
       height: 28px;
-      background: rgba(0, 0, 0, 0.06);
+      background: var(--oc-track-color);
       border-radius: 5px;
       overflow: hidden;
     }
@@ -848,7 +863,8 @@ class OnlyCatActivityHistory extends LitElement {
     .zoom-time {
       font-size: 0.7rem;
       color: var(--secondary-text-color);
-      background: rgba(41, 182, 246, 0.15);
+background: var(--secondary-background-color);
+      background: color-mix(in srgb, var(--oc-flap-color) 15%, transparent);
       padding: 1px 6px;
       border-radius: 8px;
     }
@@ -863,12 +879,12 @@ class OnlyCatActivityHistory extends LitElement {
 
     .zoom-unlock-icon {
       --mdc-icon-size: 14px;
-      color: #ff9800;
+      color: var(--warning-color, #ff9800);
     }
 
     .zoom-track {
       height: 28px;
-      background: rgba(0, 0, 0, 0.06);
+      background: var(--oc-track-color);
       border-radius: 4px;
       overflow: hidden;
     }
