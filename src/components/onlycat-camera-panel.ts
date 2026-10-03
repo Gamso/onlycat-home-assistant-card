@@ -7,6 +7,7 @@ import {
   PASSAGE_ICON,
   classifyPassage,
   isAttempt,
+  isUnavailable,
 } from "./onlycat-pets";
 import type { HomeAssistant, PetInfo } from "./types";
 
@@ -22,9 +23,12 @@ class OnlyCatCameraPanel extends LitElement {
 
   /** Direction and pet of the latest passage, from the event summary. */
   private _renderLastPassage() {
-    const a = this.eventEntityId
-      ? this.hass?.states?.[this.eventEntityId]?.attributes
+    const event = this.eventEntityId
+      ? this.hass?.states?.[this.eventEntityId]
       : undefined;
+    // An unavailable sensor may keep the attributes of an old passage.
+    if (!event || isUnavailable(event.state)) return nothing;
+    const a = event.attributes;
     const kind = classifyPassage(
       a?.direction as string | undefined,
       a?.action as string | undefined,
@@ -39,7 +43,7 @@ class OnlyCatCameraPanel extends LitElement {
       class="camera-passage ${isAttempt(kind) ? "camera-passage--attempt" : ""}"
       style="--passage-color: ${PASSAGE_COLOR[kind]}"
     >
-      <ha-icon icon="${PASSAGE_ICON[kind]}"></ha-icon>
+      <ha-icon icon="${PASSAGE_ICON[kind]}" aria-hidden="true"></ha-icon>
       ${localize(this.hass, kindKey)}${pet ? html` · ${pet}` : nothing}
     </span>`;
   }

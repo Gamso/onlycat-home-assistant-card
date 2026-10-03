@@ -1,13 +1,26 @@
-import { LitElement, html, nothing, css } from "lit";
+import { LitElement, html, nothing, css, unsafeCSS } from "lit";
 import { property } from "lit/decorators.js";
 import { localize, localizeFormat } from "../localize/localize";
-import { isOutside } from "./onlycat-pets";
+import { PASSAGE_COLOR, isOutside, isUnavailable } from "./onlycat-pets";
 import type { HomeAssistant, PetInfo } from "./types";
 
 /** One chip per pet: inside / outside, and for how long. */
 class OnlyCatPetStatus extends LitElement {
   @property({ attribute: false }) public hass!: HomeAssistant;
   @property({ attribute: false }) public pets: PetInfo[] = [];
+
+  /** Re-renders every minute so the "for how long" labels stay current. */
+  private _clockTimer?: ReturnType<typeof setInterval>;
+
+  connectedCallback(): void {
+    super.connectedCallback();
+    this._clockTimer = setInterval(() => this.requestUpdate(), 60_000);
+  }
+
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+    clearInterval(this._clockTimer);
+  }
 
   private _since(isoString?: string): string {
     const ms = isoString ? new Date(isoString).getTime() : NaN;
@@ -41,27 +54,39 @@ class OnlyCatPetStatus extends LitElement {
       <div class="pets">
         ${this.pets.map((pet) => {
           const st = this.hass?.states?.[pet.entityId];
-          const outside = isOutside(st?.state);
-          const known = st?.state === "home" || outside;
+          // A missing, "unavailable" or "unknown" tracker says nothing about
+          // where the pet is: neither inside nor outside.
+          const known = !isUnavailable(st?.state);
+          const outside = known && isOutside(st?.state);
           const label = !known
-            ? localize(this.hass, "pets.unknown")
+            ? localize(
+                this.hass,
+                st?.state === "unknown" ? "pets.unknown" : "card.unavailable",
+              )
             : outside
               ? localize(this.hass, "pets.outside")
               : localize(this.hass, "pets.inside");
           const since = known ? this._since(st?.last_changed) : "";
+          const text = `${pet.name} · ${label}${since ? ` · ${since}` : ""}`;
           return html`
             <button
+              type="button"
               class="pet ${known
                 ? outside
                   ? "pet--outside"
                   : "pet--inside"
                 : "pet--unknown"}"
               style="--pet-color: ${pet.color}"
-              title="${pet.name} · ${label}${since ? ` · ${since}` : ""}"
+              title="${text}"
+              aria-label="${text}"
               @click=${() => this._openMoreInfo(pet.entityId)}
             >
               <ha-icon
-                icon="${outside ? "mdi:tree-outline" : "mdi:home-outline"}"
+                icon="${!known
+                  ? "mdi:help-circle-outline"
+                  : outside
+                    ? "mdi:tree-outline"
+                    : "mdi:home-outline"}"
               ></ha-icon>
               <span class="pet-name">${pet.name}</span>
               <span class="pet-state"
@@ -105,17 +130,22 @@ class OnlyCatPetStatus extends LitElement {
       border-color: var(--pet-color);
     }
 
+    .pet:focus-visible {
+      outline: 2px solid var(--primary-color);
+      outline-offset: 1px;
+    }
+
     .pet ha-icon {
       --mdc-icon-size: 16px;
       flex-shrink: 0;
     }
 
     .pet--inside ha-icon {
-      color: var(--history-in-color, #43a047);
+      color: ${unsafeCSS(PASSAGE_COLOR.in)};
     }
 
     .pet--outside ha-icon {
-      color: var(--history-out-color, #fb8c00);
+      color: ${unsafeCSS(PASSAGE_COLOR.out)};
     }
 
     .pet--unknown {

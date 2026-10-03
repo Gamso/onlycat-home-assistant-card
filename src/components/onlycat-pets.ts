@@ -9,16 +9,17 @@ const TRACKER_PREFIX = "device_tracker.";
 const TRACKER_SUFFIX = "_tracker";
 
 /**
- * Pet colors. Kept clear of the flap blue and of the in (green) / out
- * (orange) passage colors so a pet is never mistaken for a direction.
+ * Pet colors, from the HA theme palette. Kept clear of the flap blue and of
+ * the in (green) / out (orange) passage colors so a pet is never mistaken
+ * for a direction.
  */
 export const PET_PALETTE = [
-  "#ec407a",
-  "#7e57c2",
-  "#5c6bc0",
-  "#8d6e63",
-  "#26c6da",
-  "#78909c",
+  "var(--pink-color, #ec407a)",
+  "var(--deep-purple-color, #7e57c2)",
+  "var(--indigo-color, #5c6bc0)",
+  "var(--brown-color, #8d6e63)",
+  "var(--cyan-color, #26c6da)",
+  "var(--blue-grey-color, #78909c)",
 ];
 
 /** `device_tracker.<rfid>_tracker` → `<rfid>` (the integration's naming). */
@@ -110,6 +111,11 @@ export function classifyPassage(
   return "unknown";
 }
 
+/** True when the tracker state can't tell where the pet is. */
+export function isUnavailable(state: string | undefined): boolean {
+  return !state || state === "unavailable" || state === "unknown";
+}
+
 export function isOutside(state: string | undefined): boolean {
   return (
     !!state &&
@@ -127,12 +133,16 @@ export const PASSAGE_ICON: Record<PassageKind, string> = {
   unknown: "mdi:cat",
 };
 
+/** Theme colours; the --history-*-color variables stay available as overrides. */
+const IN_COLOR = "var(--history-in-color, var(--success-color, #43a047))";
+const OUT_COLOR = "var(--history-out-color, var(--warning-color, #fb8c00))";
+
 export const PASSAGE_COLOR: Record<PassageKind, string> = {
-  in: "var(--history-in-color, #43a047)",
-  out: "var(--history-out-color, #fb8c00)",
-  in_attempt: "var(--history-in-color, #43a047)",
-  out_attempt: "var(--history-out-color, #fb8c00)",
-  unknown: "var(--history-flap-color, #29b6f6)",
+  in: IN_COLOR,
+  out: OUT_COLOR,
+  in_attempt: IN_COLOR,
+  out_attempt: OUT_COLOR,
+  unknown: "var(--history-flap-color, var(--info-color, #039be5))",
 };
 
 export function isAttempt(kind: PassageKind): boolean {
