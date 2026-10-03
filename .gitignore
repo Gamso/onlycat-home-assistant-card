@@ -1,3 +1,5 @@
 node_modules/
-dist/
+coverage/
+# dist/ is committed on purpose: HACS installs dist/onlycat-home-assistant-card.js
+# straight from the repository. No source map is produced (see rollup.config.js).
 *.js.map

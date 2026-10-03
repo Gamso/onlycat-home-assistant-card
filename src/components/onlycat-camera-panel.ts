@@ -1,9 +1,10 @@
 import { LitElement, html, nothing, css } from "lit";
 import { property } from "lit/decorators.js";
 import { localize, localizeFormat } from "../localize/localize";
+import type { HomeAssistant } from "./types";
 
 class OnlyCatCameraPanel extends LitElement {
-  @property({ attribute: false }) public hass!: any;
+  @property({ attribute: false }) public hass!: HomeAssistant;
   @property() public entityId!: string;
 
   @property() public eventEntityId?: string;
@@ -22,7 +23,9 @@ class OnlyCatCameraPanel extends LitElement {
    * Using it directly is exactly what HA's own camera card does.
    */
   private _getSnapshotUrl(): string | null {
-    const ep = this._entity()?.attributes?.entity_picture as string | undefined;
+    const ep = this._entity()?.attributes?.entity_picture as
+      | string
+      | undefined;
     return ep ?? null;
   }
 
@@ -54,7 +57,7 @@ class OnlyCatCameraPanel extends LitElement {
           imageEntity.attributes?.datetime ||
           imageEntity.attributes?.last_activity ||
           imageEntity.attributes?.created_at;
-        const ms = new Date(dateStr).getTime();
+        const ms = new Date(dateStr as string).getTime();
         if (!isNaN(ms)) {
           return ms;
         }
@@ -69,7 +72,7 @@ class OnlyCatCameraPanel extends LitElement {
     let latest: number | null = null;
     for (const id of ids) {
       if (!id) continue;
-      const lc = this.hass?.states?.[id]?.last_changed as string | undefined;
+      const lc = this.hass?.states?.[id]?.last_changed;
       if (!lc) continue;
       const ms = new Date(lc).getTime();
       if (!isNaN(ms) && (latest === null || ms > latest)) {

@@ -1,5 +1,45 @@
 // ─── Shared types ─────────────────────────────────────────────────────────────
 
+/** Subset of the Home Assistant frontend `hass` object used by the card. */
+export interface HassEntity {
+  entity_id: string;
+  state: string;
+  attributes: Record<string, unknown>;
+  last_changed: string;
+  last_updated: string;
+}
+
+/** Entry of `hass.entities` (entity registry, display subset). */
+export interface HassEntityRegistryEntry {
+  entity_id: string;
+  device_id?: string;
+  platform?: string;
+  translation_key?: string;
+}
+
+export interface HassLocale {
+  language?: string;
+  /** "language" | "system" | "12" | "24" */
+  time_format?: string;
+  /** "local" | "server" */
+  time_zone?: string;
+}
+
+export interface HomeAssistant {
+  states: Record<string, HassEntity | undefined>;
+  entities?: Record<string, HassEntityRegistryEntry | undefined>;
+  config?: { time_zone?: string };
+  locale?: HassLocale;
+  language?: string;
+  callApi<T>(method: "GET" | "POST", path: string): Promise<T>;
+  callService(
+    domain: string,
+    service: string,
+    data?: Record<string, unknown>,
+  ): Promise<unknown>;
+  formatEntityState?(stateObj: HassEntity, state?: string): string;
+}
+
 export interface OnlyCatCardConfig {
   name?: string;
   device_id: string;

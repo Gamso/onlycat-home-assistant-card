@@ -4,10 +4,10 @@ import "./onlycat-home-assistant-card-editor";
 import "./onlycat-camera-panel";
 import "./onlycat-activity-history";
 import { localize, localizeFormat } from "../localize/localize";
-import type { OnlyCatCardConfig } from "./types";
+import type { HomeAssistant, OnlyCatCardConfig } from "./types";
 
 class OnlyCatHomeAssistantCard extends LitElement {
-  @property({ attribute: false }) public hass!: any;
+  @property({ attribute: false }) public hass!: HomeAssistant;
   @state() private _config!: OnlyCatCardConfig;
 
   @state() private _showRebootConfirm = false;
@@ -166,7 +166,7 @@ class OnlyCatHomeAssistantCard extends LitElement {
 
   private _renderPolicy() {
     const entity = this._entity(this._policyEntityId);
-    const options: string[] = entity?.attributes?.options ?? [];
+    const options = (entity?.attributes?.options as string[] | undefined) ?? [];
     const current: string = entity?.state ?? "";
 
     return html`
