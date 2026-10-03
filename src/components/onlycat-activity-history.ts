@@ -1,13 +1,21 @@
 import { LitElement, html, nothing, svg, css } from "lit";
 import { property, state } from "lit/decorators.js";
 import { localize } from "../localize/localize";
-import type {
-  HistoryEntry,
-  HistoryStateFull,
-  HistoryStateMinimal,
-  HomeAssistant,
-  ParsedPeriod,
-} from "./types";
+import type { HistoryEntry, HomeAssistant, ParsedPeriod } from "./types";
+import { historyPath, parseHistory } from "../utils/history";
+import {
+  axisTicks,
+  dayWindow,
+  formatAxisTime,
+  formatTime,
+  resolveTimeZone,
+  useAmPm,
+  windowFraction,
+  type TimeWindow,
+} from "../utils/time";
+
+/** Default number of past days reachable with ◄ (HA recorder keeps 10 days). */
+export const DEFAULT_HISTORY_DAYS = 10;
 
 class OnlyCatActivityHistory extends LitElement {
   @property({ attribute: false }) public hass!: HomeAssistant;
@@ -15,7 +23,8 @@ class OnlyCatActivityHistory extends LitElement {
   @property() public contrabandEntityId!: string;
   @property() public humanEntityId!: string;
   @property() public lockEntityId?: string;
-  @property({ type: Number }) public historyHours = 24;
+  /** How many days back the user may navigate. */
+  @property({ type: Number }) public historyDays = DEFAULT_HISTORY_DAYS;
 
   @state() private _show = false;
   @state() private _loading = false;
@@ -23,7 +32,9 @@ class OnlyCatActivityHistory extends LitElement {
   @state() private _error: string | null = null;
   @state() private _data: ParsedPeriod[][] = [[], [], []];
   @state() private _lockData: ParsedPeriod[] = [];
-  /** 0 = current window, 1 = one window back, etc. */
+  /** Window the displayed data was fetched for; bars and axis both use it. */
+  @state() private _window: TimeWindow | null = null;
+  /** 0 = current day, 1 = one day back, etc. */
   @state() private _offsetPages = 0;
   @state() private _zoom: {
     centerTs: number;
@@ -35,21 +46,26 @@ class OnlyCatActivityHistory extends LitElement {
     eventIndex: number;
   } | null = null;
   private _zoomTimer?: ReturnType<typeof setTimeout>;
+  /** Incremented on every fetch: a response for an older request is dropped. */
+  private _requestId = 0;
 
   // ── Time window ───────────────────────────────────────────────────────────
 
-  private _timeWindow(): { start: Date; end: Date } {
-    // Calendar-day windows: midnight → midnight (or → now for current day).
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const start = new Date(
-      todayStart.getTime() - this._offsetPages * 86_400_000,
-    );
-    const end =
-      this._offsetPages === 0
-        ? new Date()
-        : new Date(start.getTime() + 86_400_000);
-    return { start, end };
+  private get _timeZone(): string {
+    return resolveTimeZone(this.hass);
+  }
+
+  private get _amPm(): boolean {
+    return useAmPm(this.hass?.locale);
+  }
+
+  private get _lang(): string {
+    return this.hass?.locale?.language ?? "en";
+  }
+
+  /** Window of the page currently selected (may still be loading). */
+  private _targetWindow(): TimeWindow {
+    return dayWindow(Date.now(), this._offsetPages, this._timeZone);
   }
 
   private _isEntityOn(id: string): boolean {
@@ -59,123 +75,40 @@ class OnlyCatActivityHistory extends LitElement {
   // ── History loading ───────────────────────────────────────────────────────
 
   private async _load() {
-    if (this._loading) return;
+    const requestId = ++this._requestId;
+    const win = this._targetWindow();
     this._loading = true;
     this._error = null;
     try {
-      const { start, end } = this._timeWindow();
-      const baseIds = [
+      // Rows 0–2 (event, contraband, human) then the lock sensor; entities
+      // that could not be resolved are left out of the query.
+      const ids = [
         this.eventEntityId,
         this.contrabandEntityId,
         this.humanEntityId,
+        this.lockEntityId ?? "",
       ];
-      const orderedIds = this.lockEntityId
-        ? [...baseIds, this.lockEntityId]
-        : baseIds;
-      const entityIds = orderedIds.join(",");
+      const queried = ids.filter((id) => !!id);
+      const raw = queried.length
+        ? await this.hass.callApi<HistoryEntry[][]>(
+            "GET",
+            historyPath(queried, win.start, win.end),
+          )
+        : [];
+      if (requestId !== this._requestId) return;
 
-      const path =
-        `history/period/${start.toISOString()}` +
-        `?filter_entity_id=${entityIds}` +
-        `&end_time=${end.toISOString()}` +
-        `&minimal_response&no_attributes&significant_changes_only=false`;
-
-      const raw = (await this.hass.callApi("GET", path)) as HistoryEntry[][];
-      if (!Array.isArray(raw)) {
-        this._data = [[], [], []];
-        this._lockData = [];
-        return;
-      }
-
-      const timeRange = end.getTime() - start.getTime();
-      const result: ParsedPeriod[][] = [[], [], [], []];
-
-      console.debug(
-        "[OnlyCat] raw API response:",
-        raw.map((s) => `${(s[0] as HistoryStateFull | undefined)?.entity_id}: ${s.length} entries`),
-      );
-
-      for (const series of raw) {
-        if (!series?.length) continue;
-
-        const first = series[0] as HistoryStateFull;
-        const idx = orderedIds.indexOf(first.entity_id);
-        if (idx === -1) continue;
-
-        let onSince: number | null = null;
-        let onCount = 0;
-
-        for (const entry of series) {
-          let stateStr: string;
-          let ts: number;
-
-          if ("state" in entry) {
-            const e = entry as HistoryStateFull;
-            // Full-format entry (first entry always has entity_id + state,
-            // but HA may also return subsequent entries with state/last_changed
-            // instead of the minimal s/lc format).
-            stateStr = e.state;
-            ts = new Date(e.last_changed).getTime();
-          } else {
-            const e = entry as HistoryStateMinimal;
-            stateStr = e.s;
-            // HA minimal_response: `lc` is seconds-since-epoch (< 1e12).
-            // `lc` is omitted by HA when last_changed == last_updated; fall
-            // back to `lu` in that case (same timestamp, different field name).
-            const lcSec = e.lc ?? e.lu;
-            if (lcSec === undefined) continue;
-            ts = lcSec > 1e12 ? lcSec : lcSec * 1000;
-          }
-
-          if (stateStr === "on" && onSince === null) {
-            onSince = ts;
-            onCount++;
-          } else if (stateStr !== "on" && onSince !== null) {
-            result[idx].push({
-              start: Math.max(0, (onSince - start.getTime()) / timeRange),
-              end: Math.min(1, (ts - start.getTime()) / timeRange),
-              startTs: onSince,
-              endTs: ts,
-            });
-            onSince = null;
-          }
-        }
-        if (onSince !== null) {
-          result[idx].push({
-            start: Math.max(0, (onSince - start.getTime()) / timeRange),
-            end: 1,
-            startTs: onSince,
-            endTs: end.getTime(),
-          });
-        }
-        console.debug(
-          `[OnlyCat] ${first.entity_id}: ${series.length} entries → ${onCount} "on" transitions → ${result[idx].length} periods`,
-        );
-      }
-
-      // Dump every parsed period so the user can compare with HA history page
-      for (let ri = 0; ri < result.length; ri++) {
-        const name = ["event", "contraband", "human", "lock"][ri];
-        for (const p of result[ri]) {
-          console.debug(
-            `[OnlyCat] ${name} period: ${new Date(p.startTs).toISOString()} → ${new Date(p.endTs).toISOString()} (${Math.round((p.endTs - p.startTs) / 1000)}s)`,
-          );
-        }
-      }
-      console.debug(
-        "[OnlyCat] history parsed",
-        result.map(
-          (a, i) => `${["event", "contraband", "human", "lock"][i]}:${a.length}`,
-        ),
-      );
+      const result = parseHistory(raw, ids, win.end);
       this._data = [result[0], result[1], result[2]];
-      this._lockData = result[3] ?? [];
+      this._lockData = result[3];
+      this._window = win;
+      this._zoom = null;
       this._hasFetched = true;
     } catch (e) {
+      if (requestId !== this._requestId) return;
       console.error("[OnlyCat] history error", e);
       this._error = localize(this.hass, "history.error");
     } finally {
-      this._loading = false;
+      if (requestId === this._requestId) this._loading = false;
     }
   }
 
@@ -187,58 +120,30 @@ class OnlyCatActivityHistory extends LitElement {
   }
 
   private _navPrev() {
+    if (this._loading || this._offsetPages >= this.historyDays) return;
     this._offsetPages++;
     this._load();
   }
 
   private _navNext() {
-    if (this._offsetPages > 0) {
-      this._offsetPages--;
-      this._load();
-    }
+    if (this._loading || this._offsetPages === 0) return;
+    this._offsetPages--;
+    this._load();
   }
 
   private _formatDateRange(): string {
-    const { start } = this._timeWindow();
-    const lang = this.hass?.locale?.language ?? "en";
-    return new Intl.DateTimeFormat(lang, {
+    const { start, timeZone } = this._targetWindow();
+    return new Intl.DateTimeFormat(this._lang, {
+      timeZone,
       weekday: "short",
       month: "short",
       day: "numeric",
-    }).format(start);
-  }
-
-  /** Returns axis tick marks with label + fractional position (0–1). */
-  private _axisLabels(): { label: string; frac: number }[] {
-    const { start, end } = this._timeWindow();
-    const totalMs = end.getTime() - start.getTime();
-    const fmt = (d: Date): string => {
-      const h = d.getHours();
-      const m = d.getMinutes();
-      return m === 0 ? `${h}h` : `${h}h${String(m).padStart(2, "0")}`;
-    };
-    const result: { label: string; frac: number }[] = [];
-    // Fixed 6-hour marks that fall within the window
-    for (let h = 0; h <= 24; h += 6) {
-      const ts = start.getTime() + h * 3_600_000;
-      if (ts > end.getTime() + 1) break;
-      const frac = Math.min(1, (ts - start.getTime()) / totalMs);
-      result.push({ label: h === 0 ? "0h" : fmt(new Date(ts)), frac });
-    }
-    // For current day, append "now" if it's not already close to the last mark
-    if (this._offsetPages === 0) {
-      const lastFrac = result[result.length - 1]?.frac ?? 0;
-      if (lastFrac < 0.97) {
-        result.push({ label: fmt(end), frac: 1 });
-      }
-    }
-    return result;
+    }).format(new Date(start));
   }
 
   private _formatTooltip(startTs: number, endTs: number): string {
-    const lang = this.hass?.locale?.language ?? "en";
-    const fmtTime = (d: Date) =>
-      d.toLocaleTimeString(lang, { hour: "2-digit", minute: "2-digit" });
+    const fmtTime = (ts: number) =>
+      formatTime(ts, this._timeZone, this._lang, this._amPm);
     const durS = Math.round((endTs - startTs) / 1000);
     const durStr =
       durS < 60
@@ -248,7 +153,7 @@ class OnlyCatActivityHistory extends LitElement {
               durS % 60 > 0 ? " " + (durS % 60) + "s" : ""
             }`
           : `${Math.floor(durS / 3600)}h ${Math.floor((durS % 3600) / 60)}min`;
-    return `${fmtTime(new Date(startTs))} – ${fmtTime(new Date(endTs))} (${durStr})`;
+    return `${fmtTime(startTs)} – ${fmtTime(endTs)} (${durStr})`;
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -304,18 +209,10 @@ class OnlyCatActivityHistory extends LitElement {
     const zEndTs = zoom.centerTs + windowMs / 2;
     const range = windowMs;
 
-    const lang = this.hass?.locale?.language ?? "en";
     const fmtTime = (ts: number) =>
-      new Date(ts).toLocaleTimeString(lang, {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-      });
-    const fmtAxis = (ts: number) => {
-      const d = new Date(ts);
-      const m = d.getMinutes();
-      return `${d.getHours()}h${m > 0 ? String(m).padStart(2, "0") : ""}`;
-    };
+      formatTime(ts, this._timeZone, this._lang, this._amPm, true);
+    const fmtAxis = (ts: number) =>
+      formatAxisTime(ts, this._timeZone, this._amPm);
 
     const durS = Math.round(
       (zoom.highlightEndTs - zoom.highlightStartTs) / 1000,
@@ -413,7 +310,7 @@ class OnlyCatActivityHistory extends LitElement {
     `;
   }
 
-  private _renderChart() {
+  private _renderChart(win: TimeWindow) {
     // Colors: use inline style so CSS custom properties resolve correctly.
     // SVG fill="" attribute does NOT evaluate var(), style="" does.
     const rows: { label: string; color: string; events: ParsedPeriod[] }[] = [
@@ -440,6 +337,7 @@ class OnlyCatActivityHistory extends LitElement {
           <button
             class="nav-btn"
             @click=${this._navPrev}
+            ?disabled=${this._loading || this._offsetPages >= this.historyDays}
             title="Previous period"
           >
             <ha-icon icon="mdi:chevron-left"></ha-icon>
@@ -448,14 +346,14 @@ class OnlyCatActivityHistory extends LitElement {
           <button
             class="nav-btn"
             @click=${this._navNext}
-            ?disabled=${this._offsetPages === 0}
+            ?disabled=${this._loading || this._offsetPages === 0}
             title="Next period"
           >
             <ha-icon icon="mdi:chevron-right"></ha-icon>
           </button>
         </div>
 
-        <div class="chart-rows">
+        <div class="chart-rows ${this._loading ? "chart-rows--loading" : ""}">
           ${rows.map(
             (row, rowIndex) => html`
               <div class="chart-row">
@@ -470,8 +368,10 @@ class OnlyCatActivityHistory extends LitElement {
                     @mouseleave=${this._onBarLeave}
                   >
                     ${row.events.map((ev) => {
-                      const x = Math.max(0, ev.start * 600);
-                      const w = Math.max(4, (ev.end - ev.start) * 600);
+                      const start = windowFraction(win, ev.startTs);
+                      const end = windowFraction(win, ev.endTs);
+                      const x = start * 600;
+                      const w = Math.max(4, (end - start) * 600);
                       return svg`<g
                           class="event-bar"
                           @mouseenter=${(e: MouseEvent) => {
@@ -510,7 +410,7 @@ class OnlyCatActivityHistory extends LitElement {
         <div class="chart-axis">
           <div></div>
           <div class="chart-axis-inner">
-            ${this._axisLabels().map(
+            ${axisTicks(win, this._amPm).map(
               ({ label, frac }) =>
                 html`<span style="left: ${frac * 100}%">${label}</span>`,
             )}
@@ -580,7 +480,9 @@ class OnlyCatActivityHistory extends LitElement {
                   <ha-icon icon="mdi:alert-circle-outline"></ha-icon>
                   <span>${this._error}</span>
                 </div>`
-              : this._renderChart()
+              : this._window
+                ? this._renderChart(this._window)
+                : nothing
           : nothing}
       </div>
     `;
@@ -753,6 +655,11 @@ class OnlyCatActivityHistory extends LitElement {
       display: flex;
       flex-direction: column;
       gap: 6px;
+    }
+
+    .chart-rows--loading {
+      opacity: 0.5;
+      transition: opacity 0.15s;
     }
 
     .chart-row {
