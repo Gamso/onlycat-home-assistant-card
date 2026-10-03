@@ -69,6 +69,36 @@ input_select:
       - "outdoor_only"
       - "locked"
     initial: "free_passage"
+  # Event summary the next simulated passage reports (direction/action/rfidCode)
+  oc_direction_backing:
+    name: "OnlyCat – Passage direction"
+    options:
+      - "INWARD"
+      - "OUTWARD"
+    initial: "OUTWARD"
+  oc_action_backing:
+    name: "OnlyCat – Passage action"
+    options:
+      - "TRANSIT"
+      - "NONE"
+    initial: "TRANSIT"
+  oc_pet_backing:
+    name: "OnlyCat – Passage pet (RFID)"
+    options:
+      - "900123000000001" # Minou
+      - "900123000000002" # Filou
+      - "999000000000999" # unknown chip
+    initial: "900123000000001"
+
+# Incremented on every simulated passage → the event sensor's eventId
+counter:
+  oc_event_id:
+    name: "OnlyCat – Event id"
+    initial: 1000
+    step: 1
+
+# Fake pet trackers (device_tracker.<rfid>_tracker), see the component
+onlycat_test_camera:
 
 # ── Template entities (expose the expected entity IDs) ────────────────────────
 template:
@@ -96,6 +126,12 @@ template:
         unique_id: only_cat_event
         state: "{{ is_state('input_boolean.oc_event_backing', 'on') }}"
         icon: mdi:cat
+        # Same attributes as the integration's event sensor (v2.0.7+)
+        attributes:
+          eventId: "{{ states('counter.oc_event_id') | int(0) }}"
+          direction: "{{ states('input_select.oc_direction_backing') }}"
+          action: "{{ states('input_select.oc_action_backing') }}"
+          rfidCode: "{{ states('input_select.oc_pet_backing') }}"
 
       # binary_sensor.only_cat_contraband  (prey / contraband)
       - name: "only_cat_contraband"
@@ -155,6 +191,18 @@ camera:
 
 # Automation: restore connectivity 5 s after a simulated reboot press
 automation:
+  # Bumped when a passage ends so the next one starts with a fresh eventId,
+  # like the real sensor, which switches id and turns on in one update.
+  - alias: "OnlyCat – New event id after each simulated passage"
+    trigger:
+      platform: state
+      entity_id: input_boolean.oc_event_backing
+      to: "off"
+    action:
+      - service: counter.increment
+        target:
+          entity_id: counter.oc_event_id
+
   - alias: "OnlyCat – Restore connectivity after reboot"
     trigger:
       platform: state

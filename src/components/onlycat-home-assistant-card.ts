@@ -3,8 +3,10 @@ import { property, query, state } from "lit/decorators.js";
 import "./onlycat-home-assistant-card-editor";
 import "./onlycat-camera-panel";
 import { DEFAULT_HISTORY_DAYS } from "./onlycat-activity-history";
+import "./onlycat-pet-status";
+import { discoverPets } from "./onlycat-pets";
 import { localize } from "../localize/localize";
-import type { HomeAssistant, OnlyCatCardConfig } from "./types";
+import type { HomeAssistant, OnlyCatCardConfig, PetInfo } from "./types";
 import {
   isConfigured,
   resolveEntities,
@@ -42,10 +44,12 @@ class OnlyCatHomeAssistantCard extends LitElement {
       device: config.device ?? "",
       device_id: config.device_id ?? "",
       show_title: config.show_title !== false,
+      show_pets: config.show_pets !== false,
       ...(config.entities ? { entities: { ...config.entities } } : {}),
       ...(config.history_days !== undefined
         ? { history_days: config.history_days }
         : {}),
+      ...(config.pets ? { pets: config.pets } : {}),
     };
   }
 
@@ -66,6 +70,19 @@ class OnlyCatHomeAssistantCard extends LitElement {
   }
 
   // ── State helpers ─────────────────────────────────────────────────────────
+
+  private _petsCache?: { key: string; pets: PetInfo[] };
+
+  /**
+   * Pet trackers, memoised on their ids and names so the history component
+   * doesn't see a new array (and re-render) on every hass update.
+   */
+  private get _pets(): PetInfo[] {
+    const pets = discoverPets(this.hass, this._config);
+    const key = JSON.stringify(pets);
+    if (this._petsCache?.key !== key) this._petsCache = { key, pets };
+    return this._petsCache.pets;
+  }
 
   private _entity(entityId: string) {
     return this.hass?.states?.[entityId];
@@ -311,6 +328,7 @@ class OnlyCatHomeAssistantCard extends LitElement {
     if (!this.hass || !this._config) return nothing;
 
     const title = this._config.name || localize(this.hass, "card.name_default");
+    const pets = this._pets;
 
     if (!isConfigured(this._config)) {
       return html`
@@ -354,7 +372,14 @@ class OnlyCatHomeAssistantCard extends LitElement {
             .humanEntityId=${ids.human}
             .contrabandEntityId=${ids.contraband}
             .lastActivityEntityId=${ids.image}
+            .pets=${pets}
           ></onlycat-camera-panel>
+          ${this._config.show_pets
+            ? html`<onlycat-pet-status
+                .hass=${this.hass}
+                .pets=${pets}
+              ></onlycat-pet-status>`
+            : nothing}
           ${this._renderPolicy()} ${this._renderActions()}
           <onlycat-activity-history
             .hass=${this.hass}
@@ -362,6 +387,7 @@ class OnlyCatHomeAssistantCard extends LitElement {
             .contrabandEntityId=${ids.contraband}
             .humanEntityId=${ids.human}
             .lockEntityId=${ids.lock}
+            .pets=${pets}
             .historyDays=${this._config.history_days ?? DEFAULT_HISTORY_DAYS}
           ></onlycat-activity-history>
         </div>

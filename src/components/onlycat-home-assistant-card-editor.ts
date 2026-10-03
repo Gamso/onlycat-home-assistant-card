@@ -90,6 +90,7 @@ class OnlyCatHomeAssistantCardEditor extends LitElement {
       },
       { name: "name", selector: { text: {} } },
       { name: "show_title", selector: { boolean: {} } },
+      { name: "show_pets", selector: { boolean: {} } },
       {
         name: "entities",
         type: "expandable",
@@ -160,6 +161,7 @@ class OnlyCatHomeAssistantCardEditor extends LitElement {
     if (!this._config || !this.hass || !this._formReady) return html``;
     const data: OnlyCatCardConfig = {
       show_title: true,
+      show_pets: true,
       ...this._config,
       // Existing YAML configs only have device_id: show the matching device.
       device: this._config.device || resolveDeviceId(this.hass, this._config),
