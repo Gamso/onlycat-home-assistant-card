@@ -162,6 +162,10 @@ class OnlyCatActivityHistory extends LitElement {
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
+  //
+  // Loading indicator: ha-spinner replaced ha-circular-progress in the HA
+  // frontend (2025.4); the latter no longer exists in current releases but is
+  // kept for older ones.
 
   private _onBarEnter(
     ev: ParsedPeriod,
@@ -537,10 +541,13 @@ class OnlyCatActivityHistory extends LitElement {
         ${this._show
           ? this._loading && !this._hasFetched
             ? html`<div class="history-status">
-                <ha-circular-progress
-                  active
-                  size="small"
-                ></ha-circular-progress>
+                ${customElements.get("ha-spinner")
+                  ? html`<ha-spinner size="small"></ha-spinner>`
+                  : html`<ha-circular-progress
+                      active
+                      indeterminate
+                      size="small"
+                    ></ha-circular-progress>`}
                 <span>${localize(this.hass, "history.loading")}</span>
               </div>`
             : this._error

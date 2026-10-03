@@ -153,4 +153,15 @@ describe("onlycat-activity-history navigation", () => {
     expect(clear).toHaveBeenCalled();
     clear.mockRestore();
   });
+
+  it("shows a spinner while the first load is pending", async () => {
+    (root().querySelector(".history-toggle") as HTMLButtonElement).click();
+    await el.updateComplete;
+    // ha-spinner is not defined here: the legacy element is used.
+    expect(root().querySelector("ha-circular-progress")).not.toBeNull();
+    customElements.define("ha-spinner", class extends HTMLElement {});
+    el.requestUpdate();
+    await el.updateComplete;
+    expect(root().querySelector("ha-spinner")).not.toBeNull();
+  });
 });

@@ -116,4 +116,15 @@ describe("onlycat-home-assistant-card status", () => {
     );
     expect(labels).toEqual(["label:free_passage", "label:locked"]);
   });
+
+  it("declares its layout for masonry and sections views", async () => {
+    el = await mount({});
+    expect(el.getGridOptions()).toEqual({
+      columns: 12,
+      min_columns: 6,
+      rows: "auto",
+    });
+    // happy-dom does no layout: the folded-card estimate is used.
+    expect(el.getCardSize()).toBe(8);
+  });
 });
