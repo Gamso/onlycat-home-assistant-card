@@ -138,6 +138,19 @@ class OnlyCatHomeAssistantCardEditor extends LitElement {
             ${localize(this.hass, "editor.show_title")}
           </label>
         </div>
+
+        <!-- Show pets -->
+        <div class="field field--checkbox">
+          <label>
+            <input
+              type="checkbox"
+              data-key="show_pets"
+              ?checked=${this._config.show_pets !== false}
+              @change=${this._valueChanged}
+            />
+            ${localize(this.hass, "editor.show_pets")}
+          </label>
+        </div>
       </div>
     `;
   }
