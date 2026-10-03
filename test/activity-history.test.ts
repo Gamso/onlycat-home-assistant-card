@@ -147,6 +147,42 @@ describe("onlycat-activity-history navigation", () => {
     expect(zoom()).toBeNull();
   });
 
+  it("draws one row per cat, by direction, and queries their trackers", async () => {
+    const minou = "device_tracker.900123000000001_tracker";
+    el.pets = [
+      { entityId: minou, rfid: "900123000000001", name: "Minou", color: "pink" },
+    ];
+    await el.updateComplete;
+    (root().querySelector(".history-toggle") as HTMLButtonElement).click();
+    expect(pending[0].msg.entity_ids).toEqual([EVENT, minou]);
+    const on = Date.parse("2026-06-15T07:00:00Z") / 1000;
+    pending[0].resolve({
+      [EVENT]: [
+        { s: "on", lu: on, a: { eventId: 1, direction: "OUTWARD", action: "TRANSIT", rfidCode: "900123000000001" } },
+        { s: "off", lu: on + 20, a: { eventId: 1 } },
+        // A visitor: hidden from the flap row, no row of its own.
+        { s: "on", lu: on + 600, a: { eventId: 2, direction: "INWARD", action: "TRANSIT", rfidCode: "999" } },
+        { s: "off", lu: on + 620, a: { eventId: 2 } },
+      ],
+      [minou]: [
+        { s: "home", lu: on - 3600 },
+        { s: "not_home", lu: on + 20 },
+      ],
+    });
+    await flush();
+    await el.updateComplete;
+    const labels = [...root().querySelectorAll(".chart-label")].map((l) => l.textContent);
+    expect(labels).toEqual(["Passage", "Minou", "Prey", "Human"]);
+    const counts = [...root().querySelectorAll(".chart-count")].map((c) => c.textContent);
+    expect(counts).toEqual(["1", "1", "0", "0"]);
+    expect(root().querySelectorAll(".outside-bar")).toHaveLength(1);
+    const legend = root().querySelector(".chart-legend")!.textContent!.replace(/\s+/g, " ");
+    expect(legend).toContain("In");
+    expect(legend).toContain("Outside");
+    const title = root().querySelector(".event-bar title")!.textContent!;
+    expect(title).toContain("Out · Minou");
+  });
+
   it("clears the pending zoom timer when removed", async () => {
     const clear = vi.spyOn(globalThis, "clearTimeout");
     el.remove();
