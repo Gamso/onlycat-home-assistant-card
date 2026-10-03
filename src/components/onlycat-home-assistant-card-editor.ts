@@ -1,7 +1,7 @@
 import { LitElement, html, css, nothing } from "lit";
 import { property, state } from "lit/decorators.js";
 import { localize } from "../localize/localize";
-import type { OnlyCatCardConfig } from "./types";
+import type { HomeAssistant, OnlyCatCardConfig } from "./types";
 
 function deviceIdFromConnectivity(entityId: string): string {
   const match = entityId.match(/^binary_sensor\.(.+)_connectivity$/);
@@ -9,7 +9,7 @@ function deviceIdFromConnectivity(entityId: string): string {
 }
 
 class OnlyCatHomeAssistantCardEditor extends LitElement {
-  @property({ attribute: false }) public hass!: any;
+  @property({ attribute: false }) public hass!: HomeAssistant;
   @state() private _config!: OnlyCatCardConfig;
 
   private _t(key: Parameters<typeof localize>[1]): string {

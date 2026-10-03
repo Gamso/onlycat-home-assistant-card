@@ -1,10 +1,16 @@
 import { LitElement, html, nothing, svg, css } from "lit";
 import { property, state } from "lit/decorators.js";
 import { localize } from "../localize/localize";
-import type { HistoryEntry, HistoryStateFull, ParsedPeriod } from "./types";
+import type {
+  HistoryEntry,
+  HistoryStateFull,
+  HistoryStateMinimal,
+  HomeAssistant,
+  ParsedPeriod,
+} from "./types";
 
 class OnlyCatActivityHistory extends LitElement {
-  @property({ attribute: false }) public hass!: any;
+  @property({ attribute: false }) public hass!: HomeAssistant;
   @property() public eventEntityId!: string;
   @property() public contrabandEntityId!: string;
   @property() public humanEntityId!: string;
@@ -86,7 +92,7 @@ class OnlyCatActivityHistory extends LitElement {
 
       console.debug(
         "[OnlyCat] raw API response:",
-        raw.map((s) => `${(s[0] as any)?.entity_id}: ${s.length} entries`),
+        raw.map((s) => `${(s[0] as HistoryStateFull | undefined)?.entity_id}: ${s.length} entries`),
       );
 
       for (const series of raw) {
@@ -103,14 +109,15 @@ class OnlyCatActivityHistory extends LitElement {
           let stateStr: string;
           let ts: number;
 
-          const e = entry as any;
-          if ("state" in e) {
+          if ("state" in entry) {
+            const e = entry as HistoryStateFull;
             // Full-format entry (first entry always has entity_id + state,
             // but HA may also return subsequent entries with state/last_changed
             // instead of the minimal s/lc format).
             stateStr = e.state;
             ts = new Date(e.last_changed).getTime();
           } else {
+            const e = entry as HistoryStateMinimal;
             stateStr = e.s;
             // HA minimal_response: `lc` is seconds-since-epoch (< 1e12).
             // `lc` is omitted by HA when last_changed == last_updated; fall
