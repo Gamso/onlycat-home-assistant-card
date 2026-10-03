@@ -315,7 +315,7 @@ class OnlyCatActivityHistory extends LitElement {
               e.stopPropagation();
               this._zoomNavigate(-1);
             }}
-            title="Previous event"
+            title="${localize(this.hass, "history.previous_event")}"
           >
             <ha-icon icon="mdi:chevron-left"></ha-icon>
           </button>
@@ -327,7 +327,7 @@ class OnlyCatActivityHistory extends LitElement {
               e.stopPropagation();
               this._zoomNavigate(1);
             }}
-            title="Next event"
+            title="${localize(this.hass, "history.next_event")}"
           >
             <ha-icon icon="mdi:chevron-right"></ha-icon>
           </button>
@@ -337,7 +337,7 @@ class OnlyCatActivityHistory extends LitElement {
               e.stopPropagation();
               this._closeZoom();
             }}
-            title="Close"
+            title="${localize(this.hass, "history.close_zoom")}"
           >
             <ha-icon icon="mdi:close"></ha-icon>
           </button>
@@ -399,7 +399,7 @@ class OnlyCatActivityHistory extends LitElement {
             class="nav-btn"
             @click=${this._navPrev}
             ?disabled=${this._loading || this._offsetPages >= this.historyDays}
-            title="Previous period"
+            title="${localize(this.hass, "history.previous_day")}"
           >
             <ha-icon icon="mdi:chevron-left"></ha-icon>
           </button>
@@ -408,7 +408,7 @@ class OnlyCatActivityHistory extends LitElement {
             class="nav-btn"
             @click=${this._navNext}
             ?disabled=${this._loading || this._offsetPages === 0}
-            title="Next period"
+            title="${localize(this.hass, "history.next_day")}"
           >
             <ha-icon icon="mdi:chevron-right"></ha-icon>
           </button>

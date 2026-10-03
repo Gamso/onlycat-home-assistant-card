@@ -99,4 +99,21 @@ describe("onlycat-home-assistant-card status", () => {
       entity_id: "button.oc_1_reboot",
     });
   });
+
+  it("labels policy options with hass.formatEntityState", async () => {
+    const hass = makeHass({ "select.oc_1_policy": "free_passage" });
+    hass.states["select.oc_1_policy"]!.attributes = {
+      options: ["free_passage", "locked"],
+    };
+    hass.formatEntityState = (_e, s) => `label:${s}`;
+    el = document.createElement("onlycat-home-assistant-card");
+    el.setConfig({ device_id: "oc_1" });
+    el.hass = hass;
+    document.body.appendChild(el);
+    await el.updateComplete;
+    const labels = [...el.shadowRoot!.querySelectorAll("option")].map((o) =>
+      o.textContent!.trim(),
+    );
+    expect(labels).toEqual(["label:free_passage", "label:locked"]);
+  });
 });

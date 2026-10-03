@@ -3,7 +3,7 @@ import { property, query, state } from "lit/decorators.js";
 import "./onlycat-home-assistant-card-editor";
 import "./onlycat-camera-panel";
 import { DEFAULT_HISTORY_DAYS } from "./onlycat-activity-history";
-import { localize, localizeFormat } from "../localize/localize";
+import { localize } from "../localize/localize";
 import type { HomeAssistant, OnlyCatCardConfig } from "./types";
 import {
   isConfigured,
@@ -73,17 +73,6 @@ class OnlyCatHomeAssistantCard extends LitElement {
   private _binaryState(entityId: string): "on" | "off" | null {
     const state = this._entity(entityId)?.state;
     return state === "on" || state === "off" ? state : null;
-  }
-
-  private _t(key: Parameters<typeof localize>[1]): string {
-    return localize(this.hass, key);
-  }
-
-  private _tf(
-    key: Parameters<typeof localizeFormat>[1],
-    vars: Record<string, string | number>,
-  ): string {
-    return localizeFormat(this.hass, key, vars);
   }
 
   // ── Actions ───────────────────────────────────────────────────────────────
@@ -192,7 +181,7 @@ class OnlyCatHomeAssistantCard extends LitElement {
                 ${options.map(
                   (opt) =>
                     html`<option value="${opt}" ?selected=${opt === current}>
-                      ${opt}
+                      ${this.hass.formatEntityState?.(entity, opt) ?? opt}
                     </option>`,
                 )}
               </select>

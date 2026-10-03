@@ -33,8 +33,12 @@
     "row_flap": "Passage",
     "row_prey": "Prey",
     "row_human": "Human",
-    "chart_now": "now",
-    "unlock_triggered": "Triggered by unlock button"
+    "unlock_triggered": "Triggered by unlock button",
+    "previous_event": "Previous event",
+    "next_event": "Next event",
+    "close_zoom": "Close zoom",
+    "previous_day": "Previous day",
+    "next_day": "Next day"
   },
   "time": {
     "just_now": "just now",
