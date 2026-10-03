@@ -79,4 +79,24 @@ describe("onlycat-home-assistant-card status", () => {
       entity_id: "button.oc_1_unlock",
     });
   });
+
+  it("asks for confirmation in a modal dialog before restarting", async () => {
+    el = await mount({ "button.oc_1_reboot": "2026-06-15T10:00:00+00:00" });
+    const root = el.shadowRoot!;
+    const dialog = root.querySelector("dialog")!;
+    expect(dialog.open).toBe(false);
+
+    root.querySelector<HTMLButtonElement>(".action-btn--secondary")!.click();
+    expect(dialog.open).toBe(true);
+    root.querySelector<HTMLButtonElement>(".btn--cancel")!.click();
+    expect(dialog.open).toBe(false);
+    expect(el.hass.callService).not.toHaveBeenCalled();
+
+    root.querySelector<HTMLButtonElement>(".action-btn--secondary")!.click();
+    root.querySelector<HTMLButtonElement>(".btn--danger")!.click();
+    expect(dialog.open).toBe(false);
+    expect(el.hass.callService).toHaveBeenCalledWith("button", "press", {
+      entity_id: "button.oc_1_reboot",
+    });
+  });
 });
