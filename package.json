@@ -18,7 +18,7 @@
     "onlycat",
     "cat-flap"
   ],
-  "author": "",
+  "author": "Gamso",
   "license": "MIT",
   "devDependencies": {
     "@eslint/js": "^10.0.1",

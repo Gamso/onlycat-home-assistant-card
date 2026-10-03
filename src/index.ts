@@ -12,5 +12,5 @@ window.customCards.push({
   name: "OnlyCat Home Assistant Card",
   description: "Card to monitor and control your OnlyCat smart cat flap.",
   preview: true,
-  documentationURL: "https://github.com/OnlyCatAI/onlycat-home-assistant",
+  documentationURL: "https://github.com/Gamso/onlycat-home-assistant-card",
 });
