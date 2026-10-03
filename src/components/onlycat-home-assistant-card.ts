@@ -49,8 +49,20 @@ class OnlyCatHomeAssistantCard extends LitElement {
     };
   }
 
+  /**
+   * Height in 50 px units for the masonry view: the rendered height when the
+   * card is laid out (it grows when the timeline is unfolded), otherwise an
+   * estimate of the folded card.
+   */
   public getCardSize(): number {
-    return 5;
+    const height = this.offsetHeight;
+    if (height > 0) return Math.ceil(height / 50);
+    return this._config?.show_title === false ? 7 : 8;
+  }
+
+  /** Sections view: full width by default, height follows the content. */
+  public getGridOptions() {
+    return { columns: 12, min_columns: 6, rows: "auto" as const };
   }
 
   // ── State helpers ─────────────────────────────────────────────────────────
