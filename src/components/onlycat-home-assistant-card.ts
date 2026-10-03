@@ -62,6 +62,18 @@ class OnlyCatHomeAssistantCard extends LitElement {
     return this._entity(entityId)?.state === "on";
   }
 
+  /** False when the entity is missing, "unavailable" or "unknown". */
+  private _isAvailable(entityId: string): boolean {
+    const state = this._entity(entityId)?.state;
+    return !!state && state !== "unavailable" && state !== "unknown";
+  }
+
+  /** "on" / "off" for a usable binary sensor, null otherwise. */
+  private _binaryState(entityId: string): "on" | "off" | null {
+    const state = this._entity(entityId)?.state;
+    return state === "on" || state === "off" ? state : null;
+  }
+
   private _t(key: Parameters<typeof localize>[1]): string {
     return localize(this.hass, key);
   }
@@ -76,14 +88,14 @@ class OnlyCatHomeAssistantCard extends LitElement {
   // ── Actions ───────────────────────────────────────────────────────────────
 
   private _onUnlock() {
-    if (!this._entity(this._ids.unlock)) return;
+    if (!this._isAvailable(this._ids.unlock)) return;
     this.hass.callService("button", "press", {
       entity_id: this._ids.unlock,
     });
   }
 
   private _onRebootConfirm() {
-    if (!this._entity(this._ids.reboot)) return;
+    if (!this._isAvailable(this._ids.reboot)) return;
     this.hass.callService("button", "press", {
       entity_id: this._ids.reboot,
     });
@@ -102,10 +114,12 @@ class OnlyCatHomeAssistantCard extends LitElement {
   // ── Render helpers ────────────────────────────────────────────────────────
 
   private _renderStatusPills() {
-    const connected = this._isOn(this._ids.connectivity);
-    // binary_sensor lock: "on" = unlocked, "off" = locked
-    const locked = !this._isOn(this._ids.lock);
+    const connectivity = this._binaryState(this._ids.connectivity);
+    // binary_sensor lock (device_class lock): "on" = unlocked, "off" = locked.
+    // Anything else (missing entity, unavailable, unknown) is not "locked".
+    const lock = this._binaryState(this._ids.lock);
     const hasErrors = this._isOn(this._ids.errors);
+    const unavailable = localize(this.hass, "card.unavailable");
 
     return html`
       <div class="status-pills">
@@ -116,24 +130,44 @@ class OnlyCatHomeAssistantCard extends LitElement {
               title="${localize(this.hass, "card.errors")}"
             ></ha-icon>`
           : nothing}
-        <div class="pill ${locked ? "pill--locked" : "pill--unlocked"}">
-          <ha-icon
-            icon="${locked ? "mdi:lock" : "mdi:lock-open-variant"}"
-          ></ha-icon>
-          <span
-            >${locked
-              ? localize(this.hass, "card.locked")
-              : localize(this.hass, "card.unlocked")}</span
-          >
-        </div>
-        <div class="pill ${connected ? "pill--online" : "pill--offline"}">
-          <ha-icon icon="${connected ? "mdi:wifi" : "mdi:wifi-off"}"></ha-icon>
-          <span
-            >${connected
-              ? localize(this.hass, "card.connected")
-              : localize(this.hass, "card.offline")}</span
-          >
-        </div>
+        ${lock === null
+          ? html`<div class="pill pill--lock pill--unknown">
+              <ha-icon icon="mdi:lock-question"></ha-icon>
+              <span>${unavailable}</span>
+            </div>`
+          : html`<div
+              class="pill pill--lock ${lock === "off"
+                ? "pill--locked"
+                : "pill--unlocked"}"
+            >
+              <ha-icon
+                icon="${lock === "off" ? "mdi:lock" : "mdi:lock-open-variant"}"
+              ></ha-icon>
+              <span
+                >${lock === "off"
+                  ? localize(this.hass, "card.locked")
+                  : localize(this.hass, "card.unlocked")}</span
+              >
+            </div>`}
+        ${connectivity === null
+          ? html`<div class="pill pill--connectivity pill--unknown">
+              <ha-icon icon="mdi:help-network-outline"></ha-icon>
+              <span>${unavailable}</span>
+            </div>`
+          : html`<div
+              class="pill pill--connectivity ${connectivity === "on"
+                ? "pill--online"
+                : "pill--offline"}"
+            >
+              <ha-icon
+                icon="${connectivity === "on" ? "mdi:wifi" : "mdi:wifi-off"}"
+              ></ha-icon>
+              <span
+                >${connectivity === "on"
+                  ? localize(this.hass, "card.connected")
+                  : localize(this.hass, "card.offline")}</span
+              >
+            </div>`}
       </div>
     `;
   }
@@ -147,7 +181,7 @@ class OnlyCatHomeAssistantCard extends LitElement {
       <div class="row-section">
         <ha-icon icon="mdi:home-clock" class="section-icon"></ha-icon>
         <span class="section-label">${localize(this.hass, "card.policy")}</span>
-        ${entity
+        ${entity && this._isAvailable(this._ids.policy)
           ? html`
               <select
                 class="policy-select"
@@ -174,6 +208,7 @@ class OnlyCatHomeAssistantCard extends LitElement {
       <div class="actions-row">
         <button
           class="action-btn action-btn--primary"
+          ?disabled=${!this._isAvailable(this._ids.unlock)}
           @click=${() => this._onUnlock()}
           title="${localize(this.hass, "actions.unlock_title")}"
         >
@@ -183,6 +218,7 @@ class OnlyCatHomeAssistantCard extends LitElement {
 
         <button
           class="action-btn action-btn--secondary"
+          ?disabled=${!this._isAvailable(this._ids.reboot)}
           @click=${() => (this._showRebootConfirm = true)}
           title="${localize(this.hass, "actions.restart_title")}"
         >
@@ -387,6 +423,10 @@ class OnlyCatHomeAssistantCard extends LitElement {
       background: rgba(244, 67, 54, 0.12);
       color: #ef5350;
     }
+    .pill--unknown {
+      background: var(--secondary-background-color);
+      color: var(--secondary-text-color);
+    }
     .error-pill-icon {
       color: var(--error-color, #e53935);
       --mdc-icon-size: 24px;
@@ -465,7 +505,12 @@ class OnlyCatHomeAssistantCard extends LitElement {
         transform 0.1s;
     }
 
-    .action-btn:active {
+    .action-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .action-btn:not(:disabled):active {
       transform: scale(0.96);
       filter: brightness(0.9);
     }
