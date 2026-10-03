@@ -1,276 +1,68 @@
-function t(t,e,i,o){var s,r=arguments.length,n=r<3?e:null===o?o=Object.getOwnPropertyDescriptor(e,i):o;if("object"==typeof Reflect&&"function"==typeof Reflect.decorate)n=Reflect.decorate(t,e,i,o);else for(var a=t.length-1;a>=0;a--)(s=t[a])&&(n=(r<3?s(n):r>3?s(e,i,n):s(e,i))||n);return r>3&&n&&Object.defineProperty(e,i,n),n}"function"==typeof SuppressedError&&SuppressedError;
+function t(t,e,o,i){var n,s=arguments.length,r=s<3?e:null===i?i=Object.getOwnPropertyDescriptor(e,o):i;if("object"==typeof Reflect&&"function"==typeof Reflect.decorate)r=Reflect.decorate(t,e,o,i);else for(var a=t.length-1;a>=0;a--)(n=t[a])&&(r=(s<3?n(r):s>3?n(e,o,r):n(e,o))||r);return s>3&&r&&Object.defineProperty(e,o,r),r}"function"==typeof SuppressedError&&SuppressedError;
 /**
  * @license
  * Copyright 2019 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
  */
-const e=globalThis,i=e.ShadowRoot&&(void 0===e.ShadyCSS||e.ShadyCSS.nativeShadow)&&"adoptedStyleSheets"in Document.prototype&&"replace"in CSSStyleSheet.prototype,o=Symbol(),s=new WeakMap;let r=class{constructor(t,e,i){if(this._$cssResult$=!0,i!==o)throw Error("CSSResult is not constructable. Use `unsafeCSS` or `css` instead.");this.cssText=t,this.t=e}get styleSheet(){let t=this.o;const e=this.t;if(i&&void 0===t){const i=void 0!==e&&1===e.length;i&&(t=s.get(e)),void 0===t&&((this.o=t=new CSSStyleSheet).replaceSync(this.cssText),i&&s.set(e,t))}return t}toString(){return this.cssText}};const n=(t,...e)=>{const i=1===t.length?t[0]:e.reduce((e,i,o)=>e+(t=>{if(!0===t._$cssResult$)return t.cssText;if("number"==typeof t)return t;throw Error("Value passed to 'css' function must be a 'css' function result: "+t+". Use 'unsafeCSS' to pass non-literal values, but take care to ensure page security.")})(i)+t[o+1],t[0]);return new r(i,t,o)},a=i?t=>t:t=>t instanceof CSSStyleSheet?(t=>{let e="";for(const i of t.cssRules)e+=i.cssText;return(t=>new r("string"==typeof t?t:t+"",void 0,o))(e)})(t):t,{is:c,defineProperty:l,getOwnPropertyDescriptor:d,getOwnPropertyNames:h,getOwnPropertySymbols:p,getPrototypeOf:u}=Object,m=globalThis,g=m.trustedTypes,y=g?g.emptyScript:"",_=m.reactiveElementPolyfillSupport,f=(t,e)=>t,v={toAttribute(t,e){switch(e){case Boolean:t=t?y:null;break;case Object:case Array:t=null==t?t:JSON.stringify(t)}return t},fromAttribute(t,e){let i=t;switch(e){case Boolean:i=null!==t;break;case Number:i=null===t?null:Number(t);break;case Object:case Array:try{i=JSON.parse(t)}catch(t){i=null}}return i}},b=(t,e)=>!c(t,e),$={attribute:!0,type:String,converter:v,reflect:!1,useDefault:!1,hasChanged:b};
+const e=globalThis,o=e.ShadowRoot&&(void 0===e.ShadyCSS||e.ShadyCSS.nativeShadow)&&"adoptedStyleSheets"in Document.prototype&&"replace"in CSSStyleSheet.prototype,i=Symbol(),n=new WeakMap;let s=class{constructor(t,e,o){if(this._$cssResult$=!0,o!==i)throw Error("CSSResult is not constructable. Use `unsafeCSS` or `css` instead.");this.cssText=t,this.t=e}get styleSheet(){let t=this.o;const e=this.t;if(o&&void 0===t){const o=void 0!==e&&1===e.length;o&&(t=n.get(e)),void 0===t&&((this.o=t=new CSSStyleSheet).replaceSync(this.cssText),o&&n.set(e,t))}return t}toString(){return this.cssText}};const r=(t,...e)=>{const o=1===t.length?t[0]:e.reduce((e,o,i)=>e+(t=>{if(!0===t._$cssResult$)return t.cssText;if("number"==typeof t)return t;throw Error("Value passed to 'css' function must be a 'css' function result: "+t+". Use 'unsafeCSS' to pass non-literal values, but take care to ensure page security.")})(o)+t[i+1],t[0]);return new s(o,t,i)},a=o?t=>t:t=>t instanceof CSSStyleSheet?(t=>{let e="";for(const o of t.cssRules)e+=o.cssText;return(t=>new s("string"==typeof t?t:t+"",void 0,i))(e)})(t):t,{is:c,defineProperty:l,getOwnPropertyDescriptor:d,getOwnPropertyNames:h,getOwnPropertySymbols:p,getPrototypeOf:u}=Object,m=globalThis,y=m.trustedTypes,f=y?y.emptyScript:"",v=m.reactiveElementPolyfillSupport,_=(t,e)=>t,g={toAttribute(t,e){switch(e){case Boolean:t=t?f:null;break;case Object:case Array:t=null==t?t:JSON.stringify(t)}return t},fromAttribute(t,e){let o=t;switch(e){case Boolean:o=null!==t;break;case Number:o=null===t?null:Number(t);break;case Object:case Array:try{o=JSON.parse(t)}catch(t){o=null}}return o}},b=(t,e)=>!c(t,e),$={attribute:!0,type:String,converter:g,reflect:!1,useDefault:!1,hasChanged:b};
 /**
  * @license
  * Copyright 2017 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
- */Symbol.metadata??=Symbol("metadata"),m.litPropertyMetadata??=new WeakMap;let x=class extends HTMLElement{static addInitializer(t){this._$Ei(),(this.l??=[]).push(t)}static get observedAttributes(){return this.finalize(),this._$Eh&&[...this._$Eh.keys()]}static createProperty(t,e=$){if(e.state&&(e.attribute=!1),this._$Ei(),this.prototype.hasOwnProperty(t)&&((e=Object.create(e)).wrapped=!0),this.elementProperties.set(t,e),!e.noAccessor){const i=Symbol(),o=this.getPropertyDescriptor(t,i,e);void 0!==o&&l(this.prototype,t,o)}}static getPropertyDescriptor(t,e,i){const{get:o,set:s}=d(this.prototype,t)??{get(){return this[e]},set(t){this[e]=t}};return{get:o,set(e){const r=o?.call(this);s?.call(this,e),this.requestUpdate(t,r,i)},configurable:!0,enumerable:!0}}static getPropertyOptions(t){return this.elementProperties.get(t)??$}static _$Ei(){if(this.hasOwnProperty(f("elementProperties")))return;const t=u(this);t.finalize(),void 0!==t.l&&(this.l=[...t.l]),this.elementProperties=new Map(t.elementProperties)}static finalize(){if(this.hasOwnProperty(f("finalized")))return;if(this.finalized=!0,this._$Ei(),this.hasOwnProperty(f("properties"))){const t=this.properties,e=[...h(t),...p(t)];for(const i of e)this.createProperty(i,t[i])}const t=this[Symbol.metadata];if(null!==t){const e=litPropertyMetadata.get(t);if(void 0!==e)for(const[t,i]of e)this.elementProperties.set(t,i)}this._$Eh=new Map;for(const[t,e]of this.elementProperties){const i=this._$Eu(t,e);void 0!==i&&this._$Eh.set(i,t)}this.elementStyles=this.finalizeStyles(this.styles)}static finalizeStyles(t){const e=[];if(Array.isArray(t)){const i=new Set(t.flat(1/0).reverse());for(const t of i)e.unshift(a(t))}else void 0!==t&&e.push(a(t));return e}static _$Eu(t,e){const i=e.attribute;return!1===i?void 0:"string"==typeof i?i:"string"==typeof t?t.toLowerCase():void 0}constructor(){super(),this._$Ep=void 0,this.isUpdatePending=!1,this.hasUpdated=!1,this._$Em=null,this._$Ev()}_$Ev(){this._$ES=new Promise(t=>this.enableUpdating=t),this._$AL=new Map,this._$E_(),this.requestUpdate(),this.constructor.l?.forEach(t=>t(this))}addController(t){(this._$EO??=new Set).add(t),void 0!==this.renderRoot&&this.isConnected&&t.hostConnected?.()}removeController(t){this._$EO?.delete(t)}_$E_(){const t=new Map,e=this.constructor.elementProperties;for(const i of e.keys())this.hasOwnProperty(i)&&(t.set(i,this[i]),delete this[i]);t.size>0&&(this._$Ep=t)}createRenderRoot(){const t=this.shadowRoot??this.attachShadow(this.constructor.shadowRootOptions);return((t,o)=>{if(i)t.adoptedStyleSheets=o.map(t=>t instanceof CSSStyleSheet?t:t.styleSheet);else for(const i of o){const o=document.createElement("style"),s=e.litNonce;void 0!==s&&o.setAttribute("nonce",s),o.textContent=i.cssText,t.appendChild(o)}})(t,this.constructor.elementStyles),t}connectedCallback(){this.renderRoot??=this.createRenderRoot(),this.enableUpdating(!0),this._$EO?.forEach(t=>t.hostConnected?.())}enableUpdating(t){}disconnectedCallback(){this._$EO?.forEach(t=>t.hostDisconnected?.())}attributeChangedCallback(t,e,i){this._$AK(t,i)}_$ET(t,e){const i=this.constructor.elementProperties.get(t),o=this.constructor._$Eu(t,i);if(void 0!==o&&!0===i.reflect){const s=(void 0!==i.converter?.toAttribute?i.converter:v).toAttribute(e,i.type);this._$Em=t,null==s?this.removeAttribute(o):this.setAttribute(o,s),this._$Em=null}}_$AK(t,e){const i=this.constructor,o=i._$Eh.get(t);if(void 0!==o&&this._$Em!==o){const t=i.getPropertyOptions(o),s="function"==typeof t.converter?{fromAttribute:t.converter}:void 0!==t.converter?.fromAttribute?t.converter:v;this._$Em=o;const r=s.fromAttribute(e,t.type);this[o]=r??this._$Ej?.get(o)??r,this._$Em=null}}requestUpdate(t,e,i,o=!1,s){if(void 0!==t){const r=this.constructor;if(!1===o&&(s=this[t]),i??=r.getPropertyOptions(t),!((i.hasChanged??b)(s,e)||i.useDefault&&i.reflect&&s===this._$Ej?.get(t)&&!this.hasAttribute(r._$Eu(t,i))))return;this.C(t,e,i)}!1===this.isUpdatePending&&(this._$ES=this._$EP())}C(t,e,{useDefault:i,reflect:o,wrapped:s},r){i&&!(this._$Ej??=new Map).has(t)&&(this._$Ej.set(t,r??e??this[t]),!0!==s||void 0!==r)||(this._$AL.has(t)||(this.hasUpdated||i||(e=void 0),this._$AL.set(t,e)),!0===o&&this._$Em!==t&&(this._$Eq??=new Set).add(t))}async _$EP(){this.isUpdatePending=!0;try{await this._$ES}catch(t){Promise.reject(t)}const t=this.scheduleUpdate();return null!=t&&await t,!this.isUpdatePending}scheduleUpdate(){return this.performUpdate()}performUpdate(){if(!this.isUpdatePending)return;if(!this.hasUpdated){if(this.renderRoot??=this.createRenderRoot(),this._$Ep){for(const[t,e]of this._$Ep)this[t]=e;this._$Ep=void 0}const t=this.constructor.elementProperties;if(t.size>0)for(const[e,i]of t){const{wrapped:t}=i,o=this[e];!0!==t||this._$AL.has(e)||void 0===o||this.C(e,void 0,i,o)}}let t=!1;const e=this._$AL;try{t=this.shouldUpdate(e),t?(this.willUpdate(e),this._$EO?.forEach(t=>t.hostUpdate?.()),this.update(e)):this._$EM()}catch(e){throw t=!1,this._$EM(),e}t&&this._$AE(e)}willUpdate(t){}_$AE(t){this._$EO?.forEach(t=>t.hostUpdated?.()),this.hasUpdated||(this.hasUpdated=!0,this.firstUpdated(t)),this.updated(t)}_$EM(){this._$AL=new Map,this.isUpdatePending=!1}get updateComplete(){return this.getUpdateComplete()}getUpdateComplete(){return this._$ES}shouldUpdate(t){return!0}update(t){this._$Eq&&=this._$Eq.forEach(t=>this._$ET(t,this[t])),this._$EM()}updated(t){}firstUpdated(t){}};x.elementStyles=[],x.shadowRootOptions={mode:"open"},x[f("elementProperties")]=new Map,x[f("finalized")]=new Map,_?.({ReactiveElement:x}),(m.reactiveElementVersions??=[]).push("2.1.2");
-/**
- * @license
- * Copyright 2017 Google LLC
- * SPDX-License-Identifier: BSD-3-Clause
- */
-const w=globalThis,E=t=>t,k=w.trustedTypes,A=k?k.createPolicy("lit-html",{createHTML:t=>t}):void 0,S="$lit$",T=`lit$${Math.random().toFixed(9).slice(2)}$`,C="?"+T,I=`<${C}>`,z=document,P=()=>z.createComment(""),O=t=>null===t||"object"!=typeof t&&"function"!=typeof t,M=Array.isArray,U="[ \t\n\f\r]",R=/<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g,D=/-->/g,H=/>/g,N=RegExp(`>|${U}(?:([^\\s"'>=/]+)(${U}*=${U}*(?:[^ \t\n\f\r"'\`<>=]|("|')|))|$)`,"g"),j=/'/g,L=/"/g,B=/^(?:script|style|textarea|title)$/i,q=t=>(e,...i)=>({_$litType$:t,strings:e,values:i}),W=q(1),V=q(2),F=Symbol.for("lit-noChange"),Y=Symbol.for("lit-nothing"),Z=new WeakMap,J=z.createTreeWalker(z,129);function K(t,e){if(!M(t)||!t.hasOwnProperty("raw"))throw Error("invalid template strings array");return void 0!==A?A.createHTML(e):e}const G=(t,e)=>{const i=t.length-1,o=[];let s,r=2===e?"<svg>":3===e?"<math>":"",n=R;for(let e=0;e<i;e++){const i=t[e];let a,c,l=-1,d=0;for(;d<i.length&&(n.lastIndex=d,c=n.exec(i),null!==c);)d=n.lastIndex,n===R?"!--"===c[1]?n=D:void 0!==c[1]?n=H:void 0!==c[2]?(B.test(c[2])&&(s=RegExp("</"+c[2],"g")),n=N):void 0!==c[3]&&(n=N):n===N?">"===c[0]?(n=s??R,l=-1):void 0===c[1]?l=-2:(l=n.lastIndex-c[2].length,a=c[1],n=void 0===c[3]?N:'"'===c[3]?L:j):n===L||n===j?n=N:n===D||n===H?n=R:(n=N,s=void 0);const h=n===N&&t[e+1].startsWith("/>")?" ":"";r+=n===R?i+I:l>=0?(o.push(a),i.slice(0,l)+S+i.slice(l)+T+h):i+T+(-2===l?e:h)}return[K(t,r+(t[i]||"<?>")+(2===e?"</svg>":3===e?"</math>":"")),o]};class X{constructor({strings:t,_$litType$:e},i){let o;this.parts=[];let s=0,r=0;const n=t.length-1,a=this.parts,[c,l]=G(t,e);if(this.el=X.createElement(c,i),J.currentNode=this.el.content,2===e||3===e){const t=this.el.content.firstChild;t.replaceWith(...t.childNodes)}for(;null!==(o=J.nextNode())&&a.length<n;){if(1===o.nodeType){if(o.hasAttributes())for(const t of o.getAttributeNames())if(t.endsWith(S)){const e=l[r++],i=o.getAttribute(t).split(T),n=/([.?@])?(.*)/.exec(e);a.push({type:1,index:s,name:n[2],strings:i,ctor:"."===n[1]?ot:"?"===n[1]?st:"@"===n[1]?rt:it}),o.removeAttribute(t)}else t.startsWith(T)&&(a.push({type:6,index:s}),o.removeAttribute(t));if(B.test(o.tagName)){const t=o.textContent.split(T),e=t.length-1;if(e>0){o.textContent=k?k.emptyScript:"";for(let i=0;i<e;i++)o.append(t[i],P()),J.nextNode(),a.push({type:2,index:++s});o.append(t[e],P())}}}else if(8===o.nodeType)if(o.data===C)a.push({type:2,index:s});else{let t=-1;for(;-1!==(t=o.data.indexOf(T,t+1));)a.push({type:7,index:s}),t+=T.length-1}s++}}static createElement(t,e){const i=z.createElement("template");return i.innerHTML=t,i}}function Q(t,e,i=t,o){if(e===F)return e;let s=void 0!==o?i._$Co?.[o]:i._$Cl;const r=O(e)?void 0:e._$litDirective$;return s?.constructor!==r&&(s?._$AO?.(!1),void 0===r?s=void 0:(s=new r(t),s._$AT(t,i,o)),void 0!==o?(i._$Co??=[])[o]=s:i._$Cl=s),void 0!==s&&(e=Q(t,s._$AS(t,e.values),s,o)),e}class tt{constructor(t,e){this._$AV=[],this._$AN=void 0,this._$AD=t,this._$AM=e}get parentNode(){return this._$AM.parentNode}get _$AU(){return this._$AM._$AU}u(t){const{el:{content:e},parts:i}=this._$AD,o=(t?.creationScope??z).importNode(e,!0);J.currentNode=o;let s=J.nextNode(),r=0,n=0,a=i[0];for(;void 0!==a;){if(r===a.index){let e;2===a.type?e=new et(s,s.nextSibling,this,t):1===a.type?e=new a.ctor(s,a.name,a.strings,this,t):6===a.type&&(e=new nt(s,this,t)),this._$AV.push(e),a=i[++n]}r!==a?.index&&(s=J.nextNode(),r++)}return J.currentNode=z,o}p(t){let e=0;for(const i of this._$AV)void 0!==i&&(void 0!==i.strings?(i._$AI(t,i,e),e+=i.strings.length-2):i._$AI(t[e])),e++}}class et{get _$AU(){return this._$AM?._$AU??this._$Cv}constructor(t,e,i,o){this.type=2,this._$AH=Y,this._$AN=void 0,this._$AA=t,this._$AB=e,this._$AM=i,this.options=o,this._$Cv=o?.isConnected??!0}get parentNode(){let t=this._$AA.parentNode;const e=this._$AM;return void 0!==e&&11===t?.nodeType&&(t=e.parentNode),t}get startNode(){return this._$AA}get endNode(){return this._$AB}_$AI(t,e=this){t=Q(this,t,e),O(t)?t===Y||null==t||""===t?(this._$AH!==Y&&this._$AR(),this._$AH=Y):t!==this._$AH&&t!==F&&this._(t):void 0!==t._$litType$?this.$(t):void 0!==t.nodeType?this.T(t):(t=>M(t)||"function"==typeof t?.[Symbol.iterator])(t)?this.k(t):this._(t)}O(t){return this._$AA.parentNode.insertBefore(t,this._$AB)}T(t){this._$AH!==t&&(this._$AR(),this._$AH=this.O(t))}_(t){this._$AH!==Y&&O(this._$AH)?this._$AA.nextSibling.data=t:this.T(z.createTextNode(t)),this._$AH=t}$(t){const{values:e,_$litType$:i}=t,o="number"==typeof i?this._$AC(t):(void 0===i.el&&(i.el=X.createElement(K(i.h,i.h[0]),this.options)),i);if(this._$AH?._$AD===o)this._$AH.p(e);else{const t=new tt(o,this),i=t.u(this.options);t.p(e),this.T(i),this._$AH=t}}_$AC(t){let e=Z.get(t.strings);return void 0===e&&Z.set(t.strings,e=new X(t)),e}k(t){M(this._$AH)||(this._$AH=[],this._$AR());const e=this._$AH;let i,o=0;for(const s of t)o===e.length?e.push(i=new et(this.O(P()),this.O(P()),this,this.options)):i=e[o],i._$AI(s),o++;o<e.length&&(this._$AR(i&&i._$AB.nextSibling,o),e.length=o)}_$AR(t=this._$AA.nextSibling,e){for(this._$AP?.(!1,!0,e);t!==this._$AB;){const e=E(t).nextSibling;E(t).remove(),t=e}}setConnected(t){void 0===this._$AM&&(this._$Cv=t,this._$AP?.(t))}}class it{get tagName(){return this.element.tagName}get _$AU(){return this._$AM._$AU}constructor(t,e,i,o,s){this.type=1,this._$AH=Y,this._$AN=void 0,this.element=t,this.name=e,this._$AM=o,this.options=s,i.length>2||""!==i[0]||""!==i[1]?(this._$AH=Array(i.length-1).fill(new String),this.strings=i):this._$AH=Y}_$AI(t,e=this,i,o){const s=this.strings;let r=!1;if(void 0===s)t=Q(this,t,e,0),r=!O(t)||t!==this._$AH&&t!==F,r&&(this._$AH=t);else{const o=t;let n,a;for(t=s[0],n=0;n<s.length-1;n++)a=Q(this,o[i+n],e,n),a===F&&(a=this._$AH[n]),r||=!O(a)||a!==this._$AH[n],a===Y?t=Y:t!==Y&&(t+=(a??"")+s[n+1]),this._$AH[n]=a}r&&!o&&this.j(t)}j(t){t===Y?this.element.removeAttribute(this.name):this.element.setAttribute(this.name,t??"")}}class ot extends it{constructor(){super(...arguments),this.type=3}j(t){this.element[this.name]=t===Y?void 0:t}}class st extends it{constructor(){super(...arguments),this.type=4}j(t){this.element.toggleAttribute(this.name,!!t&&t!==Y)}}class rt extends it{constructor(t,e,i,o,s){super(t,e,i,o,s),this.type=5}_$AI(t,e=this){if((t=Q(this,t,e,0)??Y)===F)return;const i=this._$AH,o=t===Y&&i!==Y||t.capture!==i.capture||t.once!==i.once||t.passive!==i.passive,s=t!==Y&&(i===Y||o);o&&this.element.removeEventListener(this.name,this,i),s&&this.element.addEventListener(this.name,this,t),this._$AH=t}handleEvent(t){"function"==typeof this._$AH?this._$AH.call(this.options?.host??this.element,t):this._$AH.handleEvent(t)}}class nt{constructor(t,e,i){this.element=t,this.type=6,this._$AN=void 0,this._$AM=e,this.options=i}get _$AU(){return this._$AM._$AU}_$AI(t){Q(this,t)}}const at=w.litHtmlPolyfillSupport;at?.(X,et),(w.litHtmlVersions??=[]).push("3.3.2");const ct=globalThis;
-/**
- * @license
- * Copyright 2017 Google LLC
- * SPDX-License-Identifier: BSD-3-Clause
- */class lt extends x{constructor(){super(...arguments),this.renderOptions={host:this},this._$Do=void 0}createRenderRoot(){const t=super.createRenderRoot();return this.renderOptions.renderBefore??=t.firstChild,t}update(t){const e=this.render();this.hasUpdated||(this.renderOptions.isConnected=this.isConnected),super.update(t),this._$Do=((t,e,i)=>{const o=i?.renderBefore??e;let s=o._$litPart$;if(void 0===s){const t=i?.renderBefore??null;o._$litPart$=s=new et(e.insertBefore(P(),t),t,void 0,i??{})}return s._$AI(t),s})(e,this.renderRoot,this.renderOptions)}connectedCallback(){super.connectedCallback(),this._$Do?.setConnected(!0)}disconnectedCallback(){super.disconnectedCallback(),this._$Do?.setConnected(!1)}render(){return F}}lt._$litElement$=!0,lt.finalized=!0,ct.litElementHydrateSupport?.({LitElement:lt});const dt=ct.litElementPolyfillSupport;dt?.({LitElement:lt}),(ct.litElementVersions??=[]).push("4.2.2");
+ */Symbol.metadata??=Symbol("metadata"),m.litPropertyMetadata??=new WeakMap;let x=class extends HTMLElement{static addInitializer(t){this._$Ei(),(this.l??=[]).push(t)}static get observedAttributes(){return this.finalize(),this._$Eh&&[...this._$Eh.keys()]}static createProperty(t,e=$){if(e.state&&(e.attribute=!1),this._$Ei(),this.prototype.hasOwnProperty(t)&&((e=Object.create(e)).wrapped=!0),this.elementProperties.set(t,e),!e.noAccessor){const o=Symbol(),i=this.getPropertyDescriptor(t,o,e);void 0!==i&&l(this.prototype,t,i)}}static getPropertyDescriptor(t,e,o){const{get:i,set:n}=d(this.prototype,t)??{get(){return this[e]},set(t){this[e]=t}};return{get:i,set(e){const s=i?.call(this);n?.call(this,e),this.requestUpdate(t,s,o)},configurable:!0,enumerable:!0}}static getPropertyOptions(t){return this.elementProperties.get(t)??$}static _$Ei(){if(this.hasOwnProperty(_("elementProperties")))return;const t=u(this);t.finalize(),void 0!==t.l&&(this.l=[...t.l]),this.elementProperties=new Map(t.elementProperties)}static finalize(){if(this.hasOwnProperty(_("finalized")))return;if(this.finalized=!0,this._$Ei(),this.hasOwnProperty(_("properties"))){const t=this.properties,e=[...h(t),...p(t)];for(const o of e)this.createProperty(o,t[o])}const t=this[Symbol.metadata];if(null!==t){const e=litPropertyMetadata.get(t);if(void 0!==e)for(const[t,o]of e)this.elementProperties.set(t,o)}this._$Eh=new Map;for(const[t,e]of this.elementProperties){const o=this._$Eu(t,e);void 0!==o&&this._$Eh.set(o,t)}this.elementStyles=this.finalizeStyles(this.styles)}static finalizeStyles(t){const e=[];if(Array.isArray(t)){const o=new Set(t.flat(1/0).reverse());for(const t of o)e.unshift(a(t))}else void 0!==t&&e.push(a(t));return e}static _$Eu(t,e){const o=e.attribute;return!1===o?void 0:"string"==typeof o?o:"string"==typeof t?t.toLowerCase():void 0}constructor(){super(),this._$Ep=void 0,this.isUpdatePending=!1,this.hasUpdated=!1,this._$Em=null,this._$Ev()}_$Ev(){this._$ES=new Promise(t=>this.enableUpdating=t),this._$AL=new Map,this._$E_(),this.requestUpdate(),this.constructor.l?.forEach(t=>t(this))}addController(t){(this._$EO??=new Set).add(t),void 0!==this.renderRoot&&this.isConnected&&t.hostConnected?.()}removeController(t){this._$EO?.delete(t)}_$E_(){const t=new Map,e=this.constructor.elementProperties;for(const o of e.keys())this.hasOwnProperty(o)&&(t.set(o,this[o]),delete this[o]);t.size>0&&(this._$Ep=t)}createRenderRoot(){const t=this.shadowRoot??this.attachShadow(this.constructor.shadowRootOptions);return((t,i)=>{if(o)t.adoptedStyleSheets=i.map(t=>t instanceof CSSStyleSheet?t:t.styleSheet);else for(const o of i){const i=document.createElement("style"),n=e.litNonce;void 0!==n&&i.setAttribute("nonce",n),i.textContent=o.cssText,t.appendChild(i)}})(t,this.constructor.elementStyles),t}connectedCallback(){this.renderRoot??=this.createRenderRoot(),this.enableUpdating(!0),this._$EO?.forEach(t=>t.hostConnected?.())}enableUpdating(t){}disconnectedCallback(){this._$EO?.forEach(t=>t.hostDisconnected?.())}attributeChangedCallback(t,e,o){this._$AK(t,o)}_$ET(t,e){const o=this.constructor.elementProperties.get(t),i=this.constructor._$Eu(t,o);if(void 0!==i&&!0===o.reflect){const n=(void 0!==o.converter?.toAttribute?o.converter:g).toAttribute(e,o.type);this._$Em=t,null==n?this.removeAttribute(i):this.setAttribute(i,n),this._$Em=null}}_$AK(t,e){const o=this.constructor,i=o._$Eh.get(t);if(void 0!==i&&this._$Em!==i){const t=o.getPropertyOptions(i),n="function"==typeof t.converter?{fromAttribute:t.converter}:void 0!==t.converter?.fromAttribute?t.converter:g;this._$Em=i;const s=n.fromAttribute(e,t.type);this[i]=s??this._$Ej?.get(i)??s,this._$Em=null}}requestUpdate(t,e,o,i=!1,n){if(void 0!==t){const s=this.constructor;if(!1===i&&(n=this[t]),o??=s.getPropertyOptions(t),!((o.hasChanged??b)(n,e)||o.useDefault&&o.reflect&&n===this._$Ej?.get(t)&&!this.hasAttribute(s._$Eu(t,o))))return;this.C(t,e,o)}!1===this.isUpdatePending&&(this._$ES=this._$EP())}C(t,e,{useDefault:o,reflect:i,wrapped:n},s){o&&!(this._$Ej??=new Map).has(t)&&(this._$Ej.set(t,s??e??this[t]),!0!==n||void 0!==s)||(this._$AL.has(t)||(this.hasUpdated||o||(e=void 0),this._$AL.set(t,e)),!0===i&&this._$Em!==t&&(this._$Eq??=new Set).add(t))}async _$EP(){this.isUpdatePending=!0;try{await this._$ES}catch(t){Promise.reject(t)}const t=this.scheduleUpdate();return null!=t&&await t,!this.isUpdatePending}scheduleUpdate(){return this.performUpdate()}performUpdate(){if(!this.isUpdatePending)return;if(!this.hasUpdated){if(this.renderRoot??=this.createRenderRoot(),this._$Ep){for(const[t,e]of this._$Ep)this[t]=e;this._$Ep=void 0}const t=this.constructor.elementProperties;if(t.size>0)for(const[e,o]of t){const{wrapped:t}=o,i=this[e];!0!==t||this._$AL.has(e)||void 0===i||this.C(e,void 0,o,i)}}let t=!1;const e=this._$AL;try{t=this.shouldUpdate(e),t?(this.willUpdate(e),this._$EO?.forEach(t=>t.hostUpdate?.()),this.update(e)):this._$EM()}catch(e){throw t=!1,this._$EM(),e}t&&this._$AE(e)}willUpdate(t){}_$AE(t){this._$EO?.forEach(t=>t.hostUpdated?.()),this.hasUpdated||(this.hasUpdated=!0,this.firstUpdated(t)),this.updated(t)}_$EM(){this._$AL=new Map,this.isUpdatePending=!1}get updateComplete(){return this.getUpdateComplete()}getUpdateComplete(){return this._$ES}shouldUpdate(t){return!0}update(t){this._$Eq&&=this._$Eq.forEach(t=>this._$ET(t,this[t])),this._$EM()}updated(t){}firstUpdated(t){}};x.elementStyles=[],x.shadowRootOptions={mode:"open"},x[_("elementProperties")]=new Map,x[_("finalized")]=new Map,v?.({ReactiveElement:x}),(m.reactiveElementVersions??=[]).push("2.1.2");
 /**
  * @license
  * Copyright 2017 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
  */
-const ht={attribute:!0,type:String,converter:v,reflect:!1,hasChanged:b},pt=(t=ht,e,i)=>{const{kind:o,metadata:s}=i;let r=globalThis.litPropertyMetadata.get(s);if(void 0===r&&globalThis.litPropertyMetadata.set(s,r=new Map),"setter"===o&&((t=Object.create(t)).wrapped=!0),r.set(i.name,t),"accessor"===o){const{name:o}=i;return{set(i){const s=e.get.call(this);e.set.call(this,i),this.requestUpdate(o,s,t,!0,i)},init(e){return void 0!==e&&this.C(o,void 0,t,e),e}}}if("setter"===o){const{name:o}=i;return function(i){const s=this[o];e.call(this,i),this.requestUpdate(o,s,t,!0,i)}}throw Error("Unsupported decorator location: "+o)};function ut(t){return(e,i)=>"object"==typeof i?pt(t,e,i):((t,e,i)=>{const o=e.hasOwnProperty(i);return e.constructor.createProperty(i,t),o?Object.getOwnPropertyDescriptor(e,i):void 0})(t,e,i)}
+const w=globalThis,k=t=>t,A=w.trustedTypes,E=A?A.createPolicy("lit-html",{createHTML:t=>t}):void 0,C="$lit$",T=`lit$${Math.random().toFixed(9).slice(2)}$`,S="?"+T,z=`<${S}>`,P=document,O=()=>P.createComment(""),I=t=>null===t||"object"!=typeof t&&"function"!=typeof t,U=Array.isArray,D="[ \t\n\f\r]",M=/<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g,R=/-->/g,N=/>/g,H=RegExp(`>|${D}(?:([^\\s"'>=/]+)(${D}*=${D}*(?:[^ \t\n\f\r"'\`<>=]|("|')|))|$)`,"g"),j=/'/g,L=/"/g,q=/^(?:script|style|textarea|title)$/i,B=t=>(e,...o)=>({_$litType$:t,strings:e,values:o}),Z=B(1),W=B(2),F=Symbol.for("lit-noChange"),V=Symbol.for("lit-nothing"),J=new WeakMap,Y=P.createTreeWalker(P,129);function K(t,e){if(!U(t)||!t.hasOwnProperty("raw"))throw Error("invalid template strings array");return void 0!==E?E.createHTML(e):e}const G=(t,e)=>{const o=t.length-1,i=[];let n,s=2===e?"<svg>":3===e?"<math>":"",r=M;for(let e=0;e<o;e++){const o=t[e];let a,c,l=-1,d=0;for(;d<o.length&&(r.lastIndex=d,c=r.exec(o),null!==c);)d=r.lastIndex,r===M?"!--"===c[1]?r=R:void 0!==c[1]?r=N:void 0!==c[2]?(q.test(c[2])&&(n=RegExp("</"+c[2],"g")),r=H):void 0!==c[3]&&(r=H):r===H?">"===c[0]?(r=n??M,l=-1):void 0===c[1]?l=-2:(l=r.lastIndex-c[2].length,a=c[1],r=void 0===c[3]?H:'"'===c[3]?L:j):r===L||r===j?r=H:r===R||r===N?r=M:(r=H,n=void 0);const h=r===H&&t[e+1].startsWith("/>")?" ":"";s+=r===M?o+z:l>=0?(i.push(a),o.slice(0,l)+C+o.slice(l)+T+h):o+T+(-2===l?e:h)}return[K(t,s+(t[o]||"<?>")+(2===e?"</svg>":3===e?"</math>":"")),i]};class X{constructor({strings:t,_$litType$:e},o){let i;this.parts=[];let n=0,s=0;const r=t.length-1,a=this.parts,[c,l]=G(t,e);if(this.el=X.createElement(c,o),Y.currentNode=this.el.content,2===e||3===e){const t=this.el.content.firstChild;t.replaceWith(...t.childNodes)}for(;null!==(i=Y.nextNode())&&a.length<r;){if(1===i.nodeType){if(i.hasAttributes())for(const t of i.getAttributeNames())if(t.endsWith(C)){const e=l[s++],o=i.getAttribute(t).split(T),r=/([.?@])?(.*)/.exec(e);a.push({type:1,index:n,name:r[2],strings:o,ctor:"."===r[1]?it:"?"===r[1]?nt:"@"===r[1]?st:ot}),i.removeAttribute(t)}else t.startsWith(T)&&(a.push({type:6,index:n}),i.removeAttribute(t));if(q.test(i.tagName)){const t=i.textContent.split(T),e=t.length-1;if(e>0){i.textContent=A?A.emptyScript:"";for(let o=0;o<e;o++)i.append(t[o],O()),Y.nextNode(),a.push({type:2,index:++n});i.append(t[e],O())}}}else if(8===i.nodeType)if(i.data===S)a.push({type:2,index:n});else{let t=-1;for(;-1!==(t=i.data.indexOf(T,t+1));)a.push({type:7,index:n}),t+=T.length-1}n++}}static createElement(t,e){const o=P.createElement("template");return o.innerHTML=t,o}}function Q(t,e,o=t,i){if(e===F)return e;let n=void 0!==i?o._$Co?.[i]:o._$Cl;const s=I(e)?void 0:e._$litDirective$;return n?.constructor!==s&&(n?._$AO?.(!1),void 0===s?n=void 0:(n=new s(t),n._$AT(t,o,i)),void 0!==i?(o._$Co??=[])[i]=n:o._$Cl=n),void 0!==n&&(e=Q(t,n._$AS(t,e.values),n,i)),e}class tt{constructor(t,e){this._$AV=[],this._$AN=void 0,this._$AD=t,this._$AM=e}get parentNode(){return this._$AM.parentNode}get _$AU(){return this._$AM._$AU}u(t){const{el:{content:e},parts:o}=this._$AD,i=(t?.creationScope??P).importNode(e,!0);Y.currentNode=i;let n=Y.nextNode(),s=0,r=0,a=o[0];for(;void 0!==a;){if(s===a.index){let e;2===a.type?e=new et(n,n.nextSibling,this,t):1===a.type?e=new a.ctor(n,a.name,a.strings,this,t):6===a.type&&(e=new rt(n,this,t)),this._$AV.push(e),a=o[++r]}s!==a?.index&&(n=Y.nextNode(),s++)}return Y.currentNode=P,i}p(t){let e=0;for(const o of this._$AV)void 0!==o&&(void 0!==o.strings?(o._$AI(t,o,e),e+=o.strings.length-2):o._$AI(t[e])),e++}}class et{get _$AU(){return this._$AM?._$AU??this._$Cv}constructor(t,e,o,i){this.type=2,this._$AH=V,this._$AN=void 0,this._$AA=t,this._$AB=e,this._$AM=o,this.options=i,this._$Cv=i?.isConnected??!0}get parentNode(){let t=this._$AA.parentNode;const e=this._$AM;return void 0!==e&&11===t?.nodeType&&(t=e.parentNode),t}get startNode(){return this._$AA}get endNode(){return this._$AB}_$AI(t,e=this){t=Q(this,t,e),I(t)?t===V||null==t||""===t?(this._$AH!==V&&this._$AR(),this._$AH=V):t!==this._$AH&&t!==F&&this._(t):void 0!==t._$litType$?this.$(t):void 0!==t.nodeType?this.T(t):(t=>U(t)||"function"==typeof t?.[Symbol.iterator])(t)?this.k(t):this._(t)}O(t){return this._$AA.parentNode.insertBefore(t,this._$AB)}T(t){this._$AH!==t&&(this._$AR(),this._$AH=this.O(t))}_(t){this._$AH!==V&&I(this._$AH)?this._$AA.nextSibling.data=t:this.T(P.createTextNode(t)),this._$AH=t}$(t){const{values:e,_$litType$:o}=t,i="number"==typeof o?this._$AC(t):(void 0===o.el&&(o.el=X.createElement(K(o.h,o.h[0]),this.options)),o);if(this._$AH?._$AD===i)this._$AH.p(e);else{const t=new tt(i,this),o=t.u(this.options);t.p(e),this.T(o),this._$AH=t}}_$AC(t){let e=J.get(t.strings);return void 0===e&&J.set(t.strings,e=new X(t)),e}k(t){U(this._$AH)||(this._$AH=[],this._$AR());const e=this._$AH;let o,i=0;for(const n of t)i===e.length?e.push(o=new et(this.O(O()),this.O(O()),this,this.options)):o=e[i],o._$AI(n),i++;i<e.length&&(this._$AR(o&&o._$AB.nextSibling,i),e.length=i)}_$AR(t=this._$AA.nextSibling,e){for(this._$AP?.(!1,!0,e);t!==this._$AB;){const e=k(t).nextSibling;k(t).remove(),t=e}}setConnected(t){void 0===this._$AM&&(this._$Cv=t,this._$AP?.(t))}}class ot{get tagName(){return this.element.tagName}get _$AU(){return this._$AM._$AU}constructor(t,e,o,i,n){this.type=1,this._$AH=V,this._$AN=void 0,this.element=t,this.name=e,this._$AM=i,this.options=n,o.length>2||""!==o[0]||""!==o[1]?(this._$AH=Array(o.length-1).fill(new String),this.strings=o):this._$AH=V}_$AI(t,e=this,o,i){const n=this.strings;let s=!1;if(void 0===n)t=Q(this,t,e,0),s=!I(t)||t!==this._$AH&&t!==F,s&&(this._$AH=t);else{const i=t;let r,a;for(t=n[0],r=0;r<n.length-1;r++)a=Q(this,i[o+r],e,r),a===F&&(a=this._$AH[r]),s||=!I(a)||a!==this._$AH[r],a===V?t=V:t!==V&&(t+=(a??"")+n[r+1]),this._$AH[r]=a}s&&!i&&this.j(t)}j(t){t===V?this.element.removeAttribute(this.name):this.element.setAttribute(this.name,t??"")}}class it extends ot{constructor(){super(...arguments),this.type=3}j(t){this.element[this.name]=t===V?void 0:t}}class nt extends ot{constructor(){super(...arguments),this.type=4}j(t){this.element.toggleAttribute(this.name,!!t&&t!==V)}}class st extends ot{constructor(t,e,o,i,n){super(t,e,o,i,n),this.type=5}_$AI(t,e=this){if((t=Q(this,t,e,0)??V)===F)return;const o=this._$AH,i=t===V&&o!==V||t.capture!==o.capture||t.once!==o.once||t.passive!==o.passive,n=t!==V&&(o===V||i);i&&this.element.removeEventListener(this.name,this,o),n&&this.element.addEventListener(this.name,this,t),this._$AH=t}handleEvent(t){"function"==typeof this._$AH?this._$AH.call(this.options?.host??this.element,t):this._$AH.handleEvent(t)}}class rt{constructor(t,e,o){this.element=t,this.type=6,this._$AN=void 0,this._$AM=e,this.options=o}get _$AU(){return this._$AM._$AU}_$AI(t){Q(this,t)}}const at=w.litHtmlPolyfillSupport;at?.(X,et),(w.litHtmlVersions??=[]).push("3.3.2");const ct=globalThis;
 /**
  * @license
  * Copyright 2017 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
- */function mt(t){return ut({...t,state:!0,attribute:!1})}const gt={en:{card:{name_default:"Cat Flap",config_required:"Please configure the OnlyCat card.",locked:"Locked",unlocked:"Unlocked",connected:"Connected",offline:"Offline",unavailable:"Unavailable",policy:"Policy",no_recent_activity:"No recent activity",errors:"Device errors"},actions:{unlock:"Unlock",unlock_title:"Unlock now",restart:"Restart",restart_title:"Restart the cat flap",cancel:"Cancel"},camera:{title:"Last activity",stream_unavailable:"Stream unavailable."},history:{title:"Activity history",loading:"Loading…",error:"Unable to load history.",passage_detected:"Passage detected",prey_detected:"Prey detected",human_detected:"Human detected",row_flap:"Passage",row_prey:"Prey",row_human:"Human",chart_now:"now",unlock_triggered:"Triggered by unlock button"},time:{just_now:"just now",minutes_ago:"{n} min ago",hours_ago:"{h}h ago",hours_minutes_ago:"{h}h{m} ago"},confirm_restart:{title:"Confirm restart",question:"Are you sure you want to restart the cat flap?",note:"The cat flap will be temporarily offline during the restart."},editor:{card_name:"Card name",device:"OnlyCat device",device_hint:"Select the connectivity sensor of your OnlyCat device",show_title:"Show title"}},fr:{card:{name_default:"Chatière",config_required:"Veuillez configurer la carte OnlyCat.",locked:"Verrouillé",unlocked:"Ouvert",connected:"Connecté",offline:"Hors ligne",unavailable:"Indisponible",policy:"Politique",no_recent_activity:"Aucune activité récente",errors:"Erreurs de l'appareil"},actions:{unlock:"Déverrouiller",unlock_title:"Déverrouiller maintenant",restart:"Redémarrer",restart_title:"Redémarrer la chatière",cancel:"Annuler"},camera:{title:"Dernière activité",stream_unavailable:"Flux indisponible."},history:{title:"Historique des activités",loading:"Chargement…",error:"Impossible de charger l'historique.",passage_detected:"Passage détecté",prey_detected:"Proie détectée",human_detected:"Humain détecté",row_flap:"Passage",row_prey:"Proie",row_human:"Humain",chart_now:"maintenant",unlock_triggered:"Déclenché par déverrouillage"},time:{just_now:"à l'instant",minutes_ago:"il y a {n} min",hours_ago:"il y a {h}h",hours_minutes_ago:"il y a {h}h{m}"},confirm_restart:{title:"Confirmer le redémarrage",question:"Êtes-vous sûr de vouloir redémarrer la chatière ?",note:"La chatière sera temporairement hors ligne pendant le redémarrage."},editor:{card_name:"Nom de la carte",device:"Appareil OnlyCat",device_hint:"Sélectionnez le capteur de connectivité de votre appareil OnlyCat",show_title:"Afficher le titre"}}};function yt(t,e){const i=e.indexOf("."),o=e.slice(0,i),s=e.slice(i+1),r=t[o];return"object"==typeof r?r[s]:void 0}function _t(t,e){return yt(gt[function(t){return(t?.locale?.language??t?.language??"en").toLowerCase().startsWith("fr")?"fr":"en"}(t)],e)??yt(gt.en,e)??e}function ft(t,e,i){let o=_t(t,e);for(const[t,e]of Object.entries(i))o=o.replace(`{${t}}`,String(e));return o}function vt(t){const e=t.match(/^binary_sensor\.(.+)_connectivity$/);return e?e[1]:t}class bt extends lt{_t(t){return _t(this.hass,t)}setConfig(t){this._config=t}_connectivityEntities(){return this.hass?.states?Object.keys(this.hass.states).filter(t=>/^binary_sensor\..+_connectivity$/.test(t)):[]}_valueChanged(t){const e=t.target,i=e.getAttribute("data-key");if(!i)return;let o=e.value;"checkbox"===e.type?o=e.checked:"number"===e.type&&(o=Number(e.value)),this._config={...this._config,[i]:o},this._fire()}_fire(){this.dispatchEvent(new CustomEvent("config-changed",{detail:{config:this._config}}))}get _selectedConnectivityEntity(){return this._config?.device_id?`binary_sensor.${this._config.device_id}_connectivity`:""}render(){if(!this._config)return W``;const t=this._connectivityEntities(),e=this._selectedConnectivityEntity;return W`
-      <div class="editor">
-        <!-- Card name -->
-        <div class="field">
-          <label>${_t(this.hass,"editor.card_name")}</label>
-          <input
-            type="text"
-            data-key="name"
-            .value=${this._config.name??""}
-            placeholder="${_t(this.hass,"card.name_default")}"
-            @input=${this._valueChanged}
-          />
-        </div>
-
-        <!-- Device picker (via connectivity entity) -->
-        <div class="field">
-          <label>
-            ${_t(this.hass,"editor.device")} <span class="required">*</span>
-          </label>
-          ${t.length>0?W`
-                <select
-                  class="entity-select"
-                  .value=${e}
-                  @change=${t=>{const e=t.target.value;e&&(this._config={...this._config,device_id:vt(e)},this._fire())}}
-                >
-                  <option value="" ?selected=${!e}>
-                    — ${_t(this.hass,"editor.device")} —
-                  </option>
-                  ${t.map(t=>W`<option
-                        value="${t}"
-                        ?selected=${t===e}
-                      >
-                        ${t}
-                      </option>`)}
-                </select>
-              `:W`
-                <input
-                  type="text"
-                  data-key="device_id"
-                  .value=${this._config.device_id??""}
-                  placeholder="only_cat"
-                  @input=${this._valueChanged}
-                />
-              `}
-          <span class="hint">${_t(this.hass,"editor.device_hint")}</span>
-          ${this._config.device_id?W`<code class="derived-id"
-                >binary_sensor.${this._config.device_id}_connectivity</code
-              >`:Y}
-        </div>
-
-        <!-- Show title -->
-        <div class="field field--checkbox">
-          <label>
-            <input
-              type="checkbox"
-              data-key="show_title"
-              ?checked=${!1!==this._config.show_title}
-              @change=${this._valueChanged}
-            />
-            ${_t(this.hass,"editor.show_title")}
-          </label>
-        </div>
-      </div>
-    `}}bt.styles=n`
-    .editor {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      padding: 4px 0;
-    }
-
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-    }
-
-    .field--checkbox {
-      flex-direction: row;
-      align-items: center;
-    }
-
-    label {
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--secondary-text-color);
-    }
-
-    input[type="text"],
-    input[type="number"],
-    .entity-select {
-      padding: 8px 10px;
-      border: 1px solid var(--divider-color, #ccc);
-      border-radius: 8px;
-      background: var(--card-background-color);
-      color: var(--primary-text-color);
-      font-size: 0.9rem;
-    }
-
-    .entity-select {
-      cursor: pointer;
-    }
-
-    input[type="checkbox"] {
-      width: 16px;
-      height: 16px;
-      margin-right: 8px;
-      cursor: pointer;
-    }
-
-    .hint {
-      font-size: 0.78rem;
-      color: var(--secondary-text-color);
-    }
-
-    .derived-id {
-      font-size: 0.78rem;
-      background: var(--secondary-background-color);
-      padding: 2px 6px;
-      border-radius: 4px;
-      color: var(--secondary-text-color);
-      font-family: monospace;
-    }
-
-    .required {
-      color: var(--error-color, #ef5350);
-    }
-  `,t([ut({attribute:!1})],bt.prototype,"hass",void 0),t([mt()],bt.prototype,"_config",void 0),customElements.define("onlycat-home-assistant-card-editor",bt);class $t extends lt{_entity(){return this.hass?.states?.[this.entityId]}_getSnapshotUrl(){const t=this._entity()?.attributes?.entity_picture;return t??null}_openMoreInfo(){this.dispatchEvent(new CustomEvent("hass-more-info",{bubbles:!0,composed:!0,detail:{entityId:this.entityId}}))}_latestActivityTs(){if(this.lastActivityEntityId){const t=this.hass?.states?.[this.lastActivityEntityId];if(t){const e=t.state||t.attributes?.datetime||t.attributes?.last_activity||t.attributes?.created_at,i=new Date(e).getTime();if(!isNaN(i))return i}}const t=[this.eventEntityId,this.humanEntityId,this.contrabandEntityId];let e=null;for(const i of t){if(!i)continue;const t=this.hass?.states?.[i]?.last_changed;if(!t)continue;const o=new Date(t).getTime();!isNaN(o)&&(null===e||o>e)&&(e=o)}return e}_relativeTime(t){if(!t)return"";const e=new Date(t);if(isNaN(e.getTime()))return"";const i=Math.round((Date.now()-e.getTime())/6e4);if(i<1)return _t(this.hass,"time.just_now");if(i<60)return ft(this.hass,"time.minutes_ago",{n:i});const o=Math.floor(i/60),s=i%60;return 0===s?ft(this.hass,"time.hours_ago",{h:o}):ft(this.hass,"time.hours_minutes_ago",{h:o,m:String(s).padStart(2,"0")})}render(){const t=this._getSnapshotUrl(),e=this._latestActivityTs();return W`
-      <div
-        class="camera-panel ${t?"camera-panel--clickable":""}"
-        @click=${()=>{t&&this._openMoreInfo()}}
-      >
-        ${t?W`
-              <img
-                src="${t}"
-                alt="${_t(this.hass,"camera.title")}"
-                class="camera-img"
-              />
-              <div class="camera-overlay">
-                <ha-icon icon="mdi:play-circle-outline"></ha-icon>
-                ${null!==e?W`<span class="camera-ts"
-                      >${this._relativeTime(new Date(e).toISOString())}</span
-                    >`:Y}
-              </div>
-            `:W`
-              <div class="camera-placeholder">
-                <ha-icon icon="mdi:paw"></ha-icon>
-                <span>${_t(this.hass,"card.no_recent_activity")}</span>
-              </div>
-            `}
-      </div>
-    `}}$t.styles=n`
-    :host {
-      display: block;
-    }
-
-    /* ── Thumbnail ───────────────────────────────────── */
-    .camera-panel {
-      position: relative;
-      height: 160px;
-      border-radius: 10px;
-      overflow: hidden;
-      background: var(--secondary-background-color);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .camera-panel--clickable {
-      cursor: pointer;
-    }
-
-    .camera-panel--clickable:hover .camera-overlay {
-      background: linear-gradient(transparent, rgba(0, 0, 0, 0.75));
-    }
-
-    .camera-img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-
-    .camera-overlay {
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(transparent 40%, rgba(0, 0, 0, 0.55));
-      display: flex;
-      align-items: flex-end;
-      gap: 6px;
-      padding: 10px 12px;
-      color: #fff;
-      transition: background 0.2s;
-    }
-
-    .camera-overlay ha-icon {
-      --mdc-icon-size: 22px;
-    }
-
-    .camera-ts {
-      font-size: 0.8rem;
-    }
-
-    .camera-placeholder {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-      color: var(--secondary-text-color);
-      opacity: 0.5;
-    }
-
-    .camera-placeholder ha-icon {
-      --mdc-icon-size: 52px;
-    }
-
-    .camera-placeholder span {
-      font-size: 0.85rem;
-    }
-  `,t([ut({attribute:!1})],$t.prototype,"hass",void 0),t([ut()],$t.prototype,"entityId",void 0),t([ut()],$t.prototype,"eventEntityId",void 0),t([ut()],$t.prototype,"humanEntityId",void 0),t([ut()],$t.prototype,"contrabandEntityId",void 0),t([ut()],$t.prototype,"lastActivityEntityId",void 0),customElements.define("onlycat-camera-panel",$t);class xt extends lt{constructor(){super(...arguments),this.historyHours=24,this._show=!1,this._loading=!1,this._hasFetched=!1,this._error=null,this._data=[[],[],[]],this._lockData=[],this._offsetPages=0,this._zoom=null}_timeWindow(){const t=new Date;t.setHours(0,0,0,0);const e=new Date(t.getTime()-864e5*this._offsetPages),i=0===this._offsetPages?new Date:new Date(e.getTime()+864e5);return{start:e,end:i}}_isEntityOn(t){return"on"===this.hass?.states?.[t]?.state}async _load(){if(!this._loading){this._loading=!0,this._error=null;try{const{start:t,end:e}=this._timeWindow(),i=[this.eventEntityId,this.contrabandEntityId,this.humanEntityId],o=this.lockEntityId?[...i,this.lockEntityId]:i,s=o.join(","),r=`history/period/${t.toISOString()}?filter_entity_id=${s}&end_time=${e.toISOString()}&minimal_response&no_attributes&significant_changes_only=false`,n=await this.hass.callApi("GET",r);if(!Array.isArray(n))return this._data=[[],[],[]],void(this._lockData=[]);const a=e.getTime()-t.getTime(),c=[[],[],[],[]];console.debug("[OnlyCat] raw API response:",n.map(t=>`${t[0]?.entity_id}: ${t.length} entries`));for(const i of n){if(!i?.length)continue;const s=i[0],r=o.indexOf(s.entity_id);if(-1===r)continue;let n=null,l=0;for(const e of i){let i,o;const s=e;if("state"in s)i=s.state,o=new Date(s.last_changed).getTime();else{i=s.s;const t=s.lc??s.lu;if(void 0===t)continue;o=t>1e12?t:1e3*t}"on"===i&&null===n?(n=o,l++):"on"!==i&&null!==n&&(c[r].push({start:Math.max(0,(n-t.getTime())/a),end:Math.min(1,(o-t.getTime())/a),startTs:n,endTs:o}),n=null)}null!==n&&c[r].push({start:Math.max(0,(n-t.getTime())/a),end:1,startTs:n,endTs:e.getTime()}),console.debug(`[OnlyCat] ${s.entity_id}: ${i.length} entries → ${l} "on" transitions → ${c[r].length} periods`)}for(let t=0;t<c.length;t++){const e=["event","contraband","human","lock"][t];for(const i of c[t])console.debug(`[OnlyCat] ${e} period: ${new Date(i.startTs).toISOString()} → ${new Date(i.endTs).toISOString()} (${Math.round((i.endTs-i.startTs)/1e3)}s)`)}console.debug("[OnlyCat] history parsed",c.map((t,e)=>`${["event","contraband","human","lock"][e]}:${t.length}`)),this._data=[c[0],c[1],c[2]],this._lockData=c[3]??[],this._hasFetched=!0}catch(t){console.error("[OnlyCat] history error",t),this._error=_t(this.hass,"history.error")}finally{this._loading=!1}}}_toggle(){this._show=!this._show,this._show&&this._load()}_navPrev(){this._offsetPages++,this._load()}_navNext(){this._offsetPages>0&&(this._offsetPages--,this._load())}_formatDateRange(){const{start:t}=this._timeWindow(),e=this.hass?.locale?.language??"en";return new Intl.DateTimeFormat(e,{weekday:"short",month:"short",day:"numeric"}).format(t)}_axisLabels(){const{start:t,end:e}=this._timeWindow(),i=e.getTime()-t.getTime(),o=t=>{const e=t.getHours(),i=t.getMinutes();return 0===i?`${e}h`:`${e}h${String(i).padStart(2,"0")}`},s=[];for(let r=0;r<=24;r+=6){const n=t.getTime()+36e5*r;if(n>e.getTime()+1)break;const a=Math.min(1,(n-t.getTime())/i);s.push({label:0===r?"0h":o(new Date(n)),frac:a})}if(0===this._offsetPages){(s[s.length-1]?.frac??0)<.97&&s.push({label:o(e),frac:1})}return s}_formatTooltip(t,e){const i=this.hass?.locale?.language??"en",o=t=>t.toLocaleTimeString(i,{hour:"2-digit",minute:"2-digit"}),s=Math.round((e-t)/1e3),r=s<60?`${s}s`:s<3600?`${Math.floor(s/60)}min${s%60>0?" "+s%60+"s":""}`:`${Math.floor(s/3600)}h ${Math.floor(s%3600/60)}min`;return`${o(new Date(t))} – ${o(new Date(e))} (${r})`}_onBarEnter(t,e,i,o){clearTimeout(this._zoomTimer);const s=this._data[o]?.indexOf(t)??0;this._zoom={centerTs:(t.startTs+t.endTs)/2,highlightStartTs:t.startTs,highlightEndTs:t.endTs,color:e,label:i,rowIndex:o,eventIndex:s}}_zoomNavigate(t){if(!this._zoom)return;const e=this._data[this._zoom.rowIndex],i=this._zoom.eventIndex+t;if(i<0||i>=e.length)return;const o=e[i];this._zoom={...this._zoom,eventIndex:i,centerTs:(o.startTs+o.endTs)/2,highlightStartTs:o.startTs,highlightEndTs:o.endTs}}_onBarLeave(){clearTimeout(this._zoomTimer),this._zoomTimer=setTimeout(()=>{this._zoom=null},200)}_renderZoom(){const t=this._zoom,e=t.highlightEndTs-t.highlightStartTs,i=Math.max(18e5,Math.min(72e5,30*e)),o=t.centerTs-i/2,s=t.centerTs+i/2,r=i,n=this.hass?.locale?.language??"en",a=t=>{const e=new Date(t),i=e.getMinutes();return`${e.getHours()}h${i>0?String(i).padStart(2,"0"):""}`},c=Math.round((t.highlightEndTs-t.highlightStartTs)/1e3),l=c<60?`${c}s`:`${Math.floor(c/60)}min${c%60?" "+c%60+"s":""}`,d=0===t.rowIndex&&this._lockData.some(e=>e.startTs<=t.highlightEndTs+3e4&&e.endTs>=t.highlightStartTs-3e4),h=(this._data[t.rowIndex]??[]).filter(t=>t.endTs>=o&&t.startTs<=s);return W`
+ */class lt extends x{constructor(){super(...arguments),this.renderOptions={host:this},this._$Do=void 0}createRenderRoot(){const t=super.createRenderRoot();return this.renderOptions.renderBefore??=t.firstChild,t}update(t){const e=this.render();this.hasUpdated||(this.renderOptions.isConnected=this.isConnected),super.update(t),this._$Do=((t,e,o)=>{const i=o?.renderBefore??e;let n=i._$litPart$;if(void 0===n){const t=o?.renderBefore??null;i._$litPart$=n=new et(e.insertBefore(O(),t),t,void 0,o??{})}return n._$AI(t),n})(e,this.renderRoot,this.renderOptions)}connectedCallback(){super.connectedCallback(),this._$Do?.setConnected(!0)}disconnectedCallback(){super.disconnectedCallback(),this._$Do?.setConnected(!1)}render(){return F}}lt._$litElement$=!0,lt.finalized=!0,ct.litElementHydrateSupport?.({LitElement:lt});const dt=ct.litElementPolyfillSupport;dt?.({LitElement:lt}),(ct.litElementVersions??=[]).push("4.2.2");
+/**
+ * @license
+ * Copyright 2017 Google LLC
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+const ht={attribute:!0,type:String,converter:g,reflect:!1,hasChanged:b},pt=(t=ht,e,o)=>{const{kind:i,metadata:n}=o;let s=globalThis.litPropertyMetadata.get(n);if(void 0===s&&globalThis.litPropertyMetadata.set(n,s=new Map),"setter"===i&&((t=Object.create(t)).wrapped=!0),s.set(o.name,t),"accessor"===i){const{name:i}=o;return{set(o){const n=e.get.call(this);e.set.call(this,o),this.requestUpdate(i,n,t,!0,o)},init(e){return void 0!==e&&this.C(i,void 0,t,e),e}}}if("setter"===i){const{name:i}=o;return function(o){const n=this[i];e.call(this,o),this.requestUpdate(i,n,t,!0,o)}}throw Error("Unsupported decorator location: "+i)};function ut(t){return(e,o)=>"object"==typeof o?pt(t,e,o):((t,e,o)=>{const i=e.hasOwnProperty(o);return e.constructor.createProperty(o,t),i?Object.getOwnPropertyDescriptor(e,o):void 0})(t,e,o)}
+/**
+ * @license
+ * Copyright 2017 Google LLC
+ * SPDX-License-Identifier: BSD-3-Clause
+ */function mt(t){return ut({...t,state:!0,attribute:!1})}
+/**
+ * @license
+ * Copyright 2017 Google LLC
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+/**
+ * @license
+ * Copyright 2017 Google LLC
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+function yt(t,e){return(e,o,i)=>((t,e,o)=>(o.configurable=!0,o.enumerable=!0,Reflect.decorate&&"object"!=typeof e&&Object.defineProperty(t,e,o),o))(e,o,{get(){return(e=>e.renderRoot?.querySelector(t)??null)(this)}})}const ft={en:{card:{name_default:"Cat Flap",config_required:"Please configure the OnlyCat card.",locked:"Locked",unlocked:"Unlocked",connected:"Connected",offline:"Offline",unavailable:"Unavailable",policy:"Policy",no_recent_activity:"No recent activity",errors:"Device errors"},actions:{unlock:"Unlock",unlock_title:"Unlock now",restart:"Restart",restart_title:"Restart the cat flap",cancel:"Cancel"},camera:{title:"Last activity",stream_unavailable:"Stream unavailable.",open:"Open the last activity video"},history:{title:"Activity history",loading:"Loading…",error:"Unable to load history.",passage_detected:"Passage detected",prey_detected:"Prey detected",human_detected:"Human detected",row_flap:"Passage",row_prey:"Prey",row_human:"Human",unlock_triggered:"Triggered by unlock button",previous_event:"Previous event",next_event:"Next event",close_zoom:"Close zoom",previous_day:"Previous day",next_day:"Next day"},time:{just_now:"just now",minutes_ago:"{n} min ago",hours_ago:"{h}h ago",hours_minutes_ago:"{h}h{m} ago",days_ago:"{d}d ago"},confirm_restart:{title:"Confirm restart",question:"Are you sure you want to restart the cat flap?",note:"The cat flap will be temporarily offline during the restart."},editor:{name:"Card name",device:"OnlyCat device",device_hint:"Device created by the OnlyCat integration",show_title:"Show title",entities:"Entities",entities_hint:"Leave empty to detect them from the device. Only needed for renamed entities.",advanced:"Advanced",history_days:"Days of history",history_days_hint:"How many past days the timeline can browse (default {n})",device_id:"OnlyCat device id (legacy)",device_id_hint:"Entity id prefix, e.g. oc_0cbfb5801849. Kept for configurations made before the device picker."},entity:{camera:"Last activity video",image:"Last activity image",lock:"Lock",connectivity:"Connectivity",errors:"Device errors",event:"Passage event",contraband:"Prey event",human:"Human event",policy:"Door policy",unlock:"Unlock button",reboot:"Reboot button"}},fr:{card:{name_default:"Chatière",config_required:"Veuillez configurer la carte OnlyCat.",locked:"Verrouillé",unlocked:"Ouvert",connected:"Connecté",offline:"Hors ligne",unavailable:"Indisponible",policy:"Politique",no_recent_activity:"Aucune activité récente",errors:"Erreurs de l'appareil"},actions:{unlock:"Déverrouiller",unlock_title:"Déverrouiller maintenant",restart:"Redémarrer",restart_title:"Redémarrer la chatière",cancel:"Annuler"},camera:{title:"Dernière activité",stream_unavailable:"Flux indisponible.",open:"Ouvrir la vidéo de la dernière activité"},history:{title:"Historique des activités",loading:"Chargement…",error:"Impossible de charger l'historique.",passage_detected:"Passage détecté",prey_detected:"Proie détectée",human_detected:"Humain détecté",row_flap:"Passage",row_prey:"Proie",row_human:"Humain",unlock_triggered:"Déclenché par déverrouillage",previous_event:"Événement précédent",next_event:"Événement suivant",close_zoom:"Fermer le zoom",previous_day:"Jour précédent",next_day:"Jour suivant"},time:{just_now:"à l'instant",minutes_ago:"il y a {n} min",hours_ago:"il y a {h}h",hours_minutes_ago:"il y a {h}h{m}",days_ago:"il y a {d} j"},confirm_restart:{title:"Confirmer le redémarrage",question:"Êtes-vous sûr de vouloir redémarrer la chatière ?",note:"La chatière sera temporairement hors ligne pendant le redémarrage."},editor:{name:"Nom de la carte",device:"Appareil OnlyCat",device_hint:"Appareil créé par l'intégration OnlyCat",show_title:"Afficher le titre",entities:"Entités",entities_hint:"Laisser vide pour les détecter depuis l'appareil. Utile seulement pour des entités renommées.",advanced:"Avancé",history_days:"Jours d'historique",history_days_hint:"Nombre de jours passés consultables dans la frise (par défaut {n})",device_id:"Identifiant OnlyCat (ancien format)",device_id_hint:"Préfixe des identifiants d'entité, ex. oc_0cbfb5801849. Conservé pour les configurations antérieures au sélecteur d'appareil."},entity:{camera:"Vidéo de la dernière activité",image:"Image de la dernière activité",lock:"Verrou",connectivity:"Connectivité",errors:"Erreurs de l'appareil",event:"Événement de passage",contraband:"Événement proie",human:"Événement humain",policy:"Politique de la porte",unlock:"Bouton de déverrouillage",reboot:"Bouton de redémarrage"}}};function vt(t,e){const o=e.indexOf("."),i=e.slice(0,o),n=e.slice(o+1),s=t[i];return"object"==typeof s?s[n]:void 0}function _t(t,e){return vt(ft[function(t){return(t?.locale?.language??t?.language??"en").toLowerCase().startsWith("fr")?"fr":"en"}(t)],e)??vt(ft.en,e)??e}function gt(t,e,o){let i=_t(t,e);for(const[t,e]of Object.entries(o))i=i.replace(`{${t}}`,String(e));return i}const bt="onlycat",$t={camera:{domain:"camera",key:"onlycat_last_activity_video",suffix:"last_activity_video"},image:{domain:"image",key:"onlycat_last_activity_image",suffix:"last_activity_image"},lock:{domain:"binary_sensor",key:"onlycat_lock_sensor",suffix:"lock"},connectivity:{domain:"binary_sensor",key:"onlycat_connection_sensor",suffix:"connectivity"},errors:{domain:"binary_sensor",key:"onlycat_error_sensor",suffix:"errors"},event:{domain:"binary_sensor",key:"onlycat_event_sensor",suffix:"event"},contraband:{domain:"binary_sensor",key:"onlycat_contraband_sensor",suffix:"contraband"},human:{domain:"binary_sensor",key:"onlycat_human_sensor",suffix:"human"},policy:{domain:"select",key:"onlycat_policy_select",suffix:"policy"},unlock:{domain:"button",key:"onlycat_unlock_button",suffix:"unlock"},reboot:{domain:"button",key:"onlycat_reboot_button",suffix:"reboot"}},xt=Object.keys($t);function wt(t,e){const{domain:o,suffix:i}=$t[e];return t?`${o}.${t}_${i}`:""}function kt(t,e){if(e.device)return e.device;const o=t?.entities;if(o)for(const t of xt){const i=[e.entities?.[t],wt(e.device_id??"",t)];for(const t of i){const e=t?o[t]?.device_id:void 0;if(e)return e}}}function At(t,e){const o=e.device_id??"",i=kt(t,e),n=i?Object.values(t?.entities??{}).filter(t=>!!t&&t.device_id===i&&(void 0===t.platform||t.platform===bt)):[],s={};for(const i of xt){const{domain:r,key:a,suffix:c}=$t[i],l=e.entities?.[i],d=wt(o,i),h=n.filter(t=>t.entity_id.startsWith(`${r}.`)),p=!(!d||!t?.states?.[d]||e.device&&t.entities?.[d]?.device_id!==e.device);s[i]=l||(p?d:"")||h.find(t=>t.translation_key===a)?.entity_id||h.find(t=>t.entity_id.endsWith(`_${c}`))?.entity_id||d}return s}function Et(t){if("state"in t){const e=t,o=new Date(e.last_changed).getTime();return isNaN(o)?null:{state:e.state,ts:o}}const e=t,o=e.lc??e.lu;return void 0===o?null:{state:e.s,ts:o>1e12?o:1e3*o}}const Ct=()=>{try{return Intl.DateTimeFormat().resolvedOptions().timeZone||"UTC"}catch{return"UTC"}};const Tt=new Map;function St(t,e){const o={};for(const i of function(t){let e=Tt.get(t);return e||(e=new Intl.DateTimeFormat("en-US",{timeZone:t,hourCycle:"h23",year:"numeric",month:"numeric",day:"numeric",hour:"numeric",minute:"numeric",second:"numeric"}),Tt.set(t,e)),e}(e).formatToParts(new Date(t)))"literal"!==i.type&&(o[i.type]=Number(i.value));return{year:o.year,month:o.month,day:o.day,hour:o.hour%24,minute:o.minute,second:o.second}}function zt(t,e){const o=St(t,e);return Date.UTC(o.year,o.month-1,o.day,o.hour,o.minute,o.second)-(t-(t%1e3+1e3)%1e3)}function Pt(t,e,o,i){const n=Date.UTC(t.year,t.month-1,t.day,e,o),s=zt(n,i),r=n-s,a=zt(r,i);return a===s?r:n-a}function Ot(t,e){const o=new Date(Date.UTC(t.year,t.month-1,t.day+e));return{year:o.getUTCFullYear(),month:o.getUTCMonth()+1,day:o.getUTCDate()}}function It(t,e){const o=t.end-t.start;return o<=0?0:Math.min(1,Math.max(0,(e-t.start)/o))}function Ut(t,e){if(!e)return`${t}h`;return`${t%12==0?12:t%12} ${t%24<12?"AM":"PM"}`}function Dt(t,e,o,i,n=!1){return new Intl.DateTimeFormat(o,{timeZone:e,hour:"2-digit",minute:"2-digit",...n?{second:"2-digit"}:{},hourCycle:i?"h12":"h23"}).format(new Date(t))}function Mt(t,e,o){const{hour:i,minute:n}=St(t,e);if(0===n)return Ut(i,o);const s=String(n).padStart(2,"0");if(!o)return`${i}h${s}`;return`${i%12==0?12:i%12}:${s} ${i<12?"AM":"PM"}`}class Rt extends lt{constructor(){super(...arguments),this.historyDays=10,this._show=!1,this._loading=!1,this._hasFetched=!1,this._error=null,this._data=[[],[],[]],this._lockData=[],this._window=null,this._offsetPages=0,this._zoom=null,this._requestId=0}get _timeZone(){return t=this.hass,"local"===t?.locale?.time_zone?Ct():t?.config?.time_zone||Ct();var t}get _amPm(){return function(t){const e=t?.time_format??"language";if("12"===e)return!0;if("24"===e)return!1;const o="system"===e?void 0:t?.language;return new Date("January 1, 2023 22:00:00").toLocaleString(o).includes("10")}(this.hass?.locale)}get _lang(){return this.hass?.locale?.language??"en"}_targetWindow(){return function(t,e,o){const i=Ot(St(t,o),-e),n=Pt(i,0,0,o),s=Pt(Ot(i,1),0,0,o);return{timeZone:o,day:i,start:n,end:0===e?Math.min(Math.max(t,n+1),s):s,dayEnd:s}}(Date.now(),this._offsetPages,this._timeZone)}_isEntityOn(t){return"on"===this.hass?.states?.[t]?.state}async _load(){const t=++this._requestId,e=this._targetWindow();this._loading=!0,this._error=null;try{const s=[this.eventEntityId,this.contrabandEntityId,this.humanEntityId,this.lockEntityId??""],r=s.filter(t=>!!t),a=r.length?await this.hass.callApi("GET",(o=r,i=e.start,n=e.end,`history/period/${new Date(i).toISOString()}?filter_entity_id=${o.join(",")}&end_time=${new Date(n).toISOString()}&minimal_response&no_attributes&significant_changes_only=false`)):[];if(t!==this._requestId)return;const c=function(t,e,o){const i=e.map(()=>[]);if(!Array.isArray(t))return i;for(const n of t){if(!n?.length)continue;const t=n[0],s=t.entity_id?e.indexOf(t.entity_id):-1;if(-1===s)continue;let r=null;for(const t of n){const e=Et(t);e&&("on"===e.state&&null===r?r=e.ts:"on"!==e.state&&null!==r&&(i[s].push({startTs:r,endTs:e.ts}),r=null))}null!==r&&i[s].push({startTs:r,endTs:Math.max(r,o)})}return i}(a,s,e.end);this._data=[c[0],c[1],c[2]],this._lockData=c[3],this._window=e,this._zoom=null,this._hasFetched=!0}catch(e){if(t!==this._requestId)return;console.error("[OnlyCat] history error",e),this._error=_t(this.hass,"history.error")}finally{t===this._requestId&&(this._loading=!1)}var o,i,n}_toggle(){this._show=!this._show,this._show&&this._load()}_navPrev(){this._loading||this._offsetPages>=this.historyDays||(this._offsetPages++,this._load())}_navNext(){this._loading||0===this._offsetPages||(this._offsetPages--,this._load())}_formatDateRange(){const{start:t,timeZone:e}=this._targetWindow();return new Intl.DateTimeFormat(this._lang,{timeZone:e,weekday:"short",month:"short",day:"numeric"}).format(new Date(t))}_formatTooltip(t,e){const o=t=>Dt(t,this._timeZone,this._lang,this._amPm),i=Math.round((e-t)/1e3),n=i<60?`${i}s`:i<3600?`${Math.floor(i/60)}min${i%60>0?" "+i%60+"s":""}`:`${Math.floor(i/3600)}h ${Math.floor(i%3600/60)}min`;return`${o(t)} – ${o(e)} (${n})`}disconnectedCallback(){super.disconnectedCallback(),clearTimeout(this._zoomTimer)}_onBarEnter(t,e,o,i){clearTimeout(this._zoomTimer);const n=this._data[i]?.indexOf(t)??0;this._zoom={centerTs:(t.startTs+t.endTs)/2,highlightStartTs:t.startTs,highlightEndTs:t.endTs,color:e,label:o,rowIndex:i,eventIndex:n}}_zoomNavigate(t){if(!this._zoom)return;const e=this._data[this._zoom.rowIndex],o=this._zoom.eventIndex+t;if(o<0||o>=e.length)return;const i=e[o];this._zoom={...this._zoom,eventIndex:o,centerTs:(i.startTs+i.endTs)/2,highlightStartTs:i.startTs,highlightEndTs:i.endTs}}_onBarLeave(){clearTimeout(this._zoomTimer),this._zoomTimer=setTimeout(()=>{this._zoom=null},200)}_onBarPointerEnter(t,e,o,i,n){"mouse"===t.pointerType&&(t.stopPropagation(),this._onBarEnter(e,o,i,n))}_onBarClick(t,e,o,i,n){t.stopPropagation();const s="mouse"===t.pointerType;this._zoom?.rowIndex===n&&this._zoom.highlightStartTs===e.startTs&&this._zoom.highlightEndTs===e.endTs&&!s?this._closeZoom():this._onBarEnter(e,o,i,n)}_onPointerLeave(t){"mouse"===t.pointerType&&this._onBarLeave()}_closeZoom(){clearTimeout(this._zoomTimer),this._zoom=null}_renderZoom(){const t=this._zoom,e=t.highlightEndTs-t.highlightStartTs,o=Math.max(18e5,Math.min(72e5,30*e)),i=t.centerTs-o/2,n=t.centerTs+o/2,s=o,r=t=>Mt(t,this._timeZone,this._amPm),a=Math.round((t.highlightEndTs-t.highlightStartTs)/1e3),c=a<60?`${a}s`:`${Math.floor(a/60)}min${a%60?" "+a%60+"s":""}`,l=0===t.rowIndex&&this._lockData.some(e=>e.startTs<=t.highlightEndTs+3e4&&e.endTs>=t.highlightStartTs-3e4),d=(this._data[t.rowIndex]??[]).filter(t=>t.endTs>=i&&t.startTs<=n);return Z`
       <div
         class="zoom-overlay"
-        @mouseenter=${()=>clearTimeout(this._zoomTimer)}
-        @mouseleave=${this._onBarLeave}
+        @pointerenter=${()=>clearTimeout(this._zoomTimer)}
+        @pointerleave=${this._onPointerLeave}
       >
         <div class="zoom-header-info">
-          <span class="zoom-time">${p=t.highlightStartTs,new Date(p).toLocaleTimeString(n,{hour:"2-digit",minute:"2-digit",second:"2-digit"})}</span>
-          <span class="zoom-dur">${l}</span>
-          ${d?W`<ha-icon
+          <span class="zoom-time">${(t=>Dt(t,this._timeZone,this._lang,this._amPm,!0))(t.highlightStartTs)}</span>
+          <span class="zoom-dur">${c}</span>
+          ${l?Z`<ha-icon
                 icon="mdi:lock-open-variant"
                 class="zoom-unlock-icon"
                 title="${_t(this.hass,"history.unlock_triggered")}"
-              ></ha-icon>`:Y}
+              ></ha-icon>`:V}
         </div>
         <div class="zoom-header-nav">
           <button
             class="nav-btn zoom-nav-btn"
             ?disabled=${0===t.eventIndex}
             @click=${t=>{t.stopPropagation(),this._zoomNavigate(-1)}}
-            title="Previous event"
+            title="${_t(this.hass,"history.previous_event")}"
           >
             <ha-icon icon="mdi:chevron-left"></ha-icon>
           </button>
@@ -278,36 +70,44 @@ const ht={attribute:!0,type:String,converter:v,reflect:!1,hasChanged:b},pt=(t=ht
             class="nav-btn zoom-nav-btn"
             ?disabled=${t.eventIndex>=(this._data[t.rowIndex]?.length??0)-1}
             @click=${t=>{t.stopPropagation(),this._zoomNavigate(1)}}
-            title="Next event"
+            title="${_t(this.hass,"history.next_event")}"
           >
             <ha-icon icon="mdi:chevron-right"></ha-icon>
+          </button>
+          <button
+            class="nav-btn zoom-nav-btn zoom-close-btn"
+            @click=${t=>{t.stopPropagation(),this._closeZoom()}}
+            title="${_t(this.hass,"history.close_zoom")}"
+          >
+            <ha-icon icon="mdi:close"></ha-icon>
           </button>
         </div>
         <div class="zoom-track">
           <svg class="zoom-svg" viewBox="0 0 600 28" preserveAspectRatio="none">
-            ${h.map(e=>{const i=Math.max(0,(e.startTs-o)/r*600),s=Math.min(600,(e.endTs-o)/r*600),n=Math.max(4,s-i),a=e.startTs===t.highlightStartTs&&e.endTs===t.highlightEndTs;return V`<g>
+            ${d.map(e=>{const o=Math.max(0,(e.startTs-i)/s*600),n=Math.min(600,(e.endTs-i)/s*600),r=Math.max(4,n-o),a=e.startTs===t.highlightStartTs&&e.endTs===t.highlightEndTs;return W`<g>
                 <title>${this._formatTooltip(e.startTs,e.endTs)}</title>
                 <rect
-                  x="${i}" y="4" width="${n}" height="20" rx="3"
-                  style="fill: ${t.color}; stroke: rgba(255,255,255,0.6); stroke-width: 1;"
+                  x="${o}" y="4" width="${r}" height="20" rx="3"
+                  style="fill: ${t.color}; stroke: var(--card-background-color, #fff); stroke-opacity: 0.6; stroke-width: 1;"
                   opacity="${a?"1":"0.35"}"
                 />
               </g>`})}
           </svg>
         </div>
         <div class="zoom-axis">
-          <span>${a(o)}</span>
-          <span>${a(t.centerTs)}</span>
-          <span>${a(s)}</span>
+          <span>${r(i)}</span>
+          <span>${r(t.centerTs)}</span>
+          <span>${r(n)}</span>
         </div>
       </div>
-    `;var p}_renderChart(){const t=[{label:_t(this.hass,"history.row_flap"),color:"var(--history-flap-color, #29b6f6)",events:this._data[0]??[]},{label:_t(this.hass,"history.row_prey"),color:"var(--history-contraband-color, #e53935)",events:this._data[1]??[]},{label:_t(this.hass,"history.row_human"),color:"var(--history-human-color, #ab47bc)",events:this._data[2]??[]}];return W`
+    `}_renderChart(t){const e=[{label:_t(this.hass,"history.row_flap"),color:"var(--oc-flap-color)",events:this._data[0]??[]},{label:_t(this.hass,"history.row_prey"),color:"var(--oc-contraband-color)",events:this._data[1]??[]},{label:_t(this.hass,"history.row_human"),color:"var(--oc-human-color)",events:this._data[2]??[]}];return Z`
       <div class="history-chart">
         <div class="chart-nav">
           <button
             class="nav-btn"
             @click=${this._navPrev}
-            title="Previous period"
+            ?disabled=${this._loading||this._offsetPages>=this.historyDays}
+            title="${_t(this.hass,"history.previous_day")}"
           >
             <ha-icon icon="mdi:chevron-left"></ha-icon>
           </button>
@@ -315,45 +115,46 @@ const ht={attribute:!0,type:String,converter:v,reflect:!1,hasChanged:b},pt=(t=ht
           <button
             class="nav-btn"
             @click=${this._navNext}
-            ?disabled=${0===this._offsetPages}
-            title="Next period"
+            ?disabled=${this._loading||0===this._offsetPages}
+            title="${_t(this.hass,"history.next_day")}"
           >
             <ha-icon icon="mdi:chevron-right"></ha-icon>
           </button>
         </div>
 
-        <div class="chart-rows">
-          ${t.map((t,e)=>W`
+        <div class="chart-rows ${this._loading?"chart-rows--loading":""}">
+          ${e.map((e,o)=>Z`
               <div class="chart-row">
-                <span class="chart-label" style="color: ${t.color}"
-                  >${t.label}</span
+                <span class="chart-label" style="color: ${e.color}"
+                  >${e.label}</span
                 >
                 <div class="chart-track">
                   <svg
                     class="chart-svg"
                     viewBox="0 0 600 28"
                     preserveAspectRatio="none"
-                    @mouseleave=${this._onBarLeave}
+                    @pointerleave=${this._onPointerLeave}
                   >
-                    ${t.events.map(i=>{const o=Math.max(0,600*i.start),s=Math.max(4,600*(i.end-i.start));return V`<g
+                    ${e.events.map(i=>{const n=It(t,i.startTs),s=It(t,i.endTs),r=600*n,a=Math.max(4,600*(s-n));return W`<g
                           class="event-bar"
-                          @mouseenter=${o=>{o.stopPropagation(),this._onBarEnter(i,t.color,t.label,e)}}
+                          @pointerenter=${t=>this._onBarPointerEnter(t,i,e.color,e.label,o)}
+                          @click=${t=>this._onBarClick(t,i,e.color,e.label,o)}
                         >
                         <title>${this._formatTooltip(i.startTs,i.endTs)}</title>
                         <rect
-                          x="${o}"
+                          x="${r}"
                           y="4"
-                          width="${s}"
+                          width="${a}"
                           height="20"
                           rx="3"
-                          style="fill: ${t.color}; stroke: rgba(255,255,255,0.5); stroke-width: 0.5;"
+                          style="fill: ${e.color}; stroke: var(--card-background-color, #fff); stroke-opacity: 0.5; stroke-width: 0.5;"
                           opacity="0.85"
                         />
                       </g>`})}
                   </svg>
                 </div>
-                <span class="chart-count">${t.events.length}</span>
-                ${this._zoom?.rowIndex===e?this._renderZoom():Y}
+                <span class="chart-count">${e.events.length}</span>
+                ${this._zoom?.rowIndex===o?this._renderZoom():V}
               </div>
             `)}
         </div>
@@ -361,12 +162,12 @@ const ht={attribute:!0,type:String,converter:v,reflect:!1,hasChanged:b},pt=(t=ht
         <div class="chart-axis">
           <div></div>
           <div class="chart-axis-inner">
-            ${this._axisLabels().map(({label:t,frac:e})=>W`<span style="left: ${100*e}%">${t}</span>`)}
+            ${function(t,e){const o=[];for(let i=0;i<=24;i+=6){const n=24===i?t.dayEnd:Pt(t.day,i,0,t.timeZone);if(n>t.end+1)break;o.push({ts:n,frac:It(t,n),label:Ut(i,e)})}t.end<t.dayEnd&&(o[o.length-1]?.frac??0)<.97&&o.push({ts:t.end,frac:1,label:Mt(t.end,t.timeZone,e)});return o}(t,this._amPm).map(({label:t,frac:e})=>Z`<span style="left: ${100*e}%">${t}</span>`)}
           </div>
           <div></div>
         </div>
       </div>
-    `}render(){const t=this._isEntityOn(this.eventEntityId),e=this._isEntityOn(this.contrabandEntityId),i=this._isEntityOn(this.humanEntityId);return W`
+    `}render(){const t=this._isEntityOn(this.eventEntityId),e=this._isEntityOn(this.contrabandEntityId),o=this._isEntityOn(this.humanEntityId);return Z`
       <div class="event-section">
         <button
           class="history-toggle ${this._show?"history-toggle--open":""}"
@@ -375,24 +176,24 @@ const ht={attribute:!0,type:String,converter:v,reflect:!1,hasChanged:b},pt=(t=ht
           <ha-icon icon="mdi:chart-timeline-variant"></ha-icon>
           <span>${_t(this.hass,"history.title")}</span>
 
-          ${t?W`<span
+          ${t?Z`<span
                 class="event-badge event-badge--flap"
                 title="${_t(this.hass,"history.passage_detected")}"
               >
                 <ha-icon icon="mdi:cat"></ha-icon>
-              </span>`:Y}
-          ${e?W`<span
+              </span>`:V}
+          ${e?Z`<span
                 class="event-badge event-badge--contraband"
                 title="${_t(this.hass,"history.prey_detected")}"
               >
                 <ha-icon icon="mdi:rodent"></ha-icon>
-              </span>`:Y}
-          ${i?W`<span
+              </span>`:V}
+          ${o?Z`<span
                 class="event-badge event-badge--human"
                 title="${_t(this.hass,"history.human_detected")}"
               >
                 <ha-icon icon="mdi:account"></ha-icon>
-              </span>`:Y}
+              </span>`:V}
 
           <ha-icon
             class="chevron"
@@ -400,20 +201,33 @@ const ht={attribute:!0,type:String,converter:v,reflect:!1,hasChanged:b},pt=(t=ht
           ></ha-icon>
         </button>
 
-        ${this._show?this._loading&&!this._hasFetched?W`<div class="history-status">
-                <ha-circular-progress
-                  active
-                  size="small"
-                ></ha-circular-progress>
+        ${this._show?this._loading&&!this._hasFetched?Z`<div class="history-status">
+                ${customElements.get("ha-spinner")?Z`<ha-spinner size="small"></ha-spinner>`:Z`<ha-circular-progress
+                      active
+                      indeterminate
+                      size="small"
+                    ></ha-circular-progress>`}
                 <span>${_t(this.hass,"history.loading")}</span>
-              </div>`:this._error?W`<div class="history-status history-status--error">
+              </div>`:this._error?Z`<div class="history-status history-status--error">
                   <ha-icon icon="mdi:alert-circle-outline"></ha-icon>
                   <span>${this._error}</span>
-                </div>`:this._renderChart():Y}
+                </div>`:this._window?this._renderChart(this._window):V:V}
       </div>
-    `}}xt.styles=n`
+    `}}Rt.styles=r`
     :host {
       display: block;
+      /* Theme colours; --history-*-color stay available as overrides. */
+      --oc-flap-color: var(--history-flap-color, var(--info-color, #039be5));
+      --oc-contraband-color: var(
+        --history-contraband-color,
+        var(--error-color, #db4437)
+      );
+      --oc-human-color: var(--history-human-color, var(--purple-color, #926bc7));
+      --oc-track-color: color-mix(
+        in srgb,
+        var(--primary-text-color, #212121) 8%,
+        transparent
+      );
     }
 
     /* ── Toggle button ───────────────────────────────── */
@@ -476,18 +290,21 @@ const ht={attribute:!0,type:String,converter:v,reflect:!1,hasChanged:b},pt=(t=ht
     }
 
     .event-badge--flap {
-      background: rgba(41, 182, 246, 0.15);
-      color: #29b6f6;
+background: var(--secondary-background-color);
+      background: color-mix(in srgb, var(--oc-flap-color) 15%, transparent);
+      color: var(--oc-flap-color);
     }
 
     .event-badge--contraband {
-      background: rgba(229, 57, 53, 0.15);
-      color: #e53935;
+background: var(--secondary-background-color);
+      background: color-mix(in srgb, var(--oc-contraband-color) 15%, transparent);
+      color: var(--oc-contraband-color);
     }
 
     .event-badge--human {
-      background: rgba(171, 71, 188, 0.15);
-      color: #ab47bc;
+background: var(--secondary-background-color);
+      background: color-mix(in srgb, var(--oc-human-color) 15%, transparent);
+      color: var(--oc-human-color);
     }
 
     /* ── Loading / error ─────────────────────────────── */
@@ -580,6 +397,11 @@ const ht={attribute:!0,type:String,converter:v,reflect:!1,hasChanged:b},pt=(t=ht
       gap: 6px;
     }
 
+    .chart-rows--loading {
+      opacity: 0.5;
+      transition: opacity 0.15s;
+    }
+
     .chart-row {
       display: grid;
       grid-template-columns: 52px 1fr 28px;
@@ -598,7 +420,7 @@ const ht={attribute:!0,type:String,converter:v,reflect:!1,hasChanged:b},pt=(t=ht
 
     .chart-track {
       height: 28px;
-      background: rgba(0, 0, 0, 0.06);
+      background: var(--oc-track-color);
       border-radius: 5px;
       overflow: hidden;
     }
@@ -698,7 +520,8 @@ const ht={attribute:!0,type:String,converter:v,reflect:!1,hasChanged:b},pt=(t=ht
     .zoom-time {
       font-size: 0.7rem;
       color: var(--secondary-text-color);
-      background: rgba(41, 182, 246, 0.15);
+background: var(--secondary-background-color);
+      background: color-mix(in srgb, var(--oc-flap-color) 15%, transparent);
       padding: 1px 6px;
       border-radius: 8px;
     }
@@ -713,12 +536,12 @@ const ht={attribute:!0,type:String,converter:v,reflect:!1,hasChanged:b},pt=(t=ht
 
     .zoom-unlock-icon {
       --mdc-icon-size: 14px;
-      color: #ff9800;
+      color: var(--warning-color, #ff9800);
     }
 
     .zoom-track {
       height: 28px;
-      background: rgba(0, 0, 0, 0.06);
+      background: var(--oc-track-color);
       border-radius: 4px;
       overflow: hidden;
     }
@@ -737,50 +560,178 @@ const ht={attribute:!0,type:String,converter:v,reflect:!1,hasChanged:b},pt=(t=ht
       color: var(--secondary-text-color);
       opacity: 0.7;
     }
-  `,t([ut({attribute:!1})],xt.prototype,"hass",void 0),t([ut()],xt.prototype,"eventEntityId",void 0),t([ut()],xt.prototype,"contrabandEntityId",void 0),t([ut()],xt.prototype,"humanEntityId",void 0),t([ut()],xt.prototype,"lockEntityId",void 0),t([ut({type:Number})],xt.prototype,"historyHours",void 0),t([mt()],xt.prototype,"_show",void 0),t([mt()],xt.prototype,"_loading",void 0),t([mt()],xt.prototype,"_hasFetched",void 0),t([mt()],xt.prototype,"_error",void 0),t([mt()],xt.prototype,"_data",void 0),t([mt()],xt.prototype,"_lockData",void 0),t([mt()],xt.prototype,"_offsetPages",void 0),t([mt()],xt.prototype,"_zoom",void 0),customElements.define("onlycat-activity-history",xt);class wt extends lt{constructor(){super(...arguments),this._showRebootConfirm=!1}get _deviceId(){return this._config?.device_id??""}get _cameraEntityId(){return`camera.${this._deviceId}_last_activity_video`}get _lockEntityId(){return`binary_sensor.${this._deviceId}_lock`}get _connectivityEntityId(){return`binary_sensor.${this._deviceId}_connectivity`}get _policyEntityId(){return`select.${this._deviceId}_policy`}get _unlockEntityId(){return`button.${this._deviceId}_unlock`}get _rebootEntityId(){return`button.${this._deviceId}_reboot`}get _eventEntityId(){return`binary_sensor.${this._deviceId}_event`}get _contrabandEntityId(){return`binary_sensor.${this._deviceId}_contraband`}get _humanEntityId(){return`binary_sensor.${this._deviceId}_human`}get _lastActivityEntityId(){return`image.${this._deviceId}_last_activity_image`}get _errorsEntityId(){return`binary_sensor.${this._deviceId}_errors`}static getStubConfig(){return{name:"",device_id:"",show_title:!0}}static getConfigElement(){return document.createElement("onlycat-home-assistant-card-editor")}setConfig(t){if(!t)throw new Error("Invalid configuration.");this._config={name:t.name??"",device_id:t.device_id??"",show_title:!1!==t.show_title}}getCardSize(){return 5}_entity(t){return this.hass?.states?.[t]}_isOn(t){return"on"===this._entity(t)?.state}_t(t){return _t(this.hass,t)}_tf(t,e){return ft(this.hass,t,e)}_onUnlock(){this._entity(this._unlockEntityId)&&this.hass.callService("button","press",{entity_id:this._unlockEntityId})}_onRebootConfirm(){this._entity(this._rebootEntityId)&&(this.hass.callService("button","press",{entity_id:this._rebootEntityId}),this._showRebootConfirm=!1)}_onPolicyChange(t){const e=t.target.value;e&&this.hass.callService("select","select_option",{entity_id:this._policyEntityId,option:e})}_renderStatusPills(){const t=this._isOn(this._connectivityEntityId),e=!this._isOn(this._lockEntityId),i=this._isOn(this._errorsEntityId);return W`
+  `,t([ut({attribute:!1})],Rt.prototype,"hass",void 0),t([ut()],Rt.prototype,"eventEntityId",void 0),t([ut()],Rt.prototype,"contrabandEntityId",void 0),t([ut()],Rt.prototype,"humanEntityId",void 0),t([ut()],Rt.prototype,"lockEntityId",void 0),t([ut({type:Number})],Rt.prototype,"historyDays",void 0),t([mt()],Rt.prototype,"_show",void 0),t([mt()],Rt.prototype,"_loading",void 0),t([mt()],Rt.prototype,"_hasFetched",void 0),t([mt()],Rt.prototype,"_error",void 0),t([mt()],Rt.prototype,"_data",void 0),t([mt()],Rt.prototype,"_lockData",void 0),t([mt()],Rt.prototype,"_window",void 0),t([mt()],Rt.prototype,"_offsetPages",void 0),t([mt()],Rt.prototype,"_zoom",void 0),customElements.define("onlycat-activity-history",Rt);const Nt=Object.keys($t);class Ht extends lt{constructor(){super(...arguments),this._formReady=!!customElements.get("ha-form"),this._computeLabel=t=>{const e=t.name in $t?`entity.${t.name}`:`editor.${t.name}`;return _t(this.hass,e)},this._computeHelper=t=>"device"===t.name?_t(this.hass,"editor.device_hint"):"device_id"===t.name?_t(this.hass,"editor.device_id_hint"):"entities"===t.name?_t(this.hass,"editor.entities_hint"):"history_days"===t.name?gt(this.hass,"editor.history_days_hint",{n:10}):void 0}setConfig(t){this._config=t}connectedCallback(){super.connectedCallback(),this._formReady||async function(){if(!customElements.get("ha-form"))try{const t=await(window.loadCardHelpers?.()),e=t?.createCardElement({type:"entities"}),o=e?.constructor;await(o?.getConfigElement?.())}catch{}}().then(()=>this._formReady=!0)}_schema(){return[{name:"device",selector:{device:{filter:{integration:bt}}}},{name:"name",selector:{text:{}}},{name:"show_title",selector:{boolean:{}}},{name:"entities",type:"expandable",title:_t(this.hass,"editor.entities"),schema:Nt.map(t=>({name:t,selector:{entity:{domain:$t[t].domain}}}))},{name:"advanced",type:"expandable",flatten:!0,title:_t(this.hass,"editor.advanced"),schema:[{name:"history_days",selector:{number:{min:1,max:365,mode:"box"}}},{name:"device_id",selector:{text:{}}}]}]}_valueChanged(t){t.stopPropagation();const e={...t.detail.value},o=this._config.device||kt(this.hass,this._config);e.device&&e.device!==o&&delete e.device_id,this._config=function(t){const e={...t},o=Object.fromEntries(Object.entries(t.entities??{}).filter(([,t])=>!!t));return Object.keys(o).length?e.entities=o:delete e.entities,e.device_id||delete e.device_id,e.device||delete e.device,void 0!==e.history_days&&null!==e.history_days||delete e.history_days,e}(e),this.dispatchEvent(new CustomEvent("config-changed",{detail:{config:this._config},bubbles:!0,composed:!0}))}render(){if(!this._config||!this.hass||!this._formReady)return Z``;const t={show_title:!0,...this._config,device:this._config.device||kt(this.hass,this._config)};return Z`
+      <ha-form
+        .hass=${this.hass}
+        .data=${t}
+        .schema=${this._schema()}
+        .computeLabel=${this._computeLabel}
+        .computeHelper=${this._computeHelper}
+        @value-changed=${this._valueChanged}
+      ></ha-form>
+    `}}t([ut({attribute:!1})],Ht.prototype,"hass",void 0),t([mt()],Ht.prototype,"_config",void 0),t([mt()],Ht.prototype,"_formReady",void 0),customElements.define("onlycat-home-assistant-card-editor",Ht);class jt extends lt{connectedCallback(){super.connectedCallback(),this._clockTimer=setInterval(()=>this.requestUpdate(),6e4)}disconnectedCallback(){super.disconnectedCallback(),clearInterval(this._clockTimer)}_entity(){return this.hass?.states?.[this.entityId]}_getSnapshotUrl(){return t=this._entity()?.attributes?.entity_picture,"string"!=typeof t?null:t.startsWith("/api/camera_proxy/")?t:null;var t}_openMoreInfo(){this.dispatchEvent(new CustomEvent("hass-more-info",{bubbles:!0,composed:!0,detail:{entityId:this.entityId}}))}_latestActivityTs(){if(this.lastActivityEntityId){const t=this.hass?.states?.[this.lastActivityEntityId]?.state,e=t?new Date(t).getTime():NaN;if(!isNaN(e))return e}const t=[this.eventEntityId,this.humanEntityId,this.contrabandEntityId];let e=null;for(const o of t){if(!o)continue;const t=this.hass?.states?.[o]?.last_changed;if(!t)continue;const i=new Date(t).getTime();!isNaN(i)&&(null===e||i>e)&&(e=i)}return e}_onKeyDown(t){"Enter"!==t.key&&" "!==t.key||(t.preventDefault(),this._openMoreInfo())}render(){const t=this._getSnapshotUrl(),e=this._latestActivityTs(),o="unavailable"===this._entity()?.state;return Z`
+      <div
+        class="camera-panel ${t?"camera-panel--clickable":""}"
+        role=${t?"button":V}
+        tabindex=${t?"0":V}
+        aria-label=${t?_t(this.hass,"camera.open"):V}
+        @click=${()=>{t&&this._openMoreInfo()}}
+        @keydown=${e=>{t&&this._onKeyDown(e)}}
+      >
+        ${t?Z`
+              <img
+                src="${t}"
+                alt="${_t(this.hass,"camera.title")}"
+                class="camera-img"
+              />
+              <div class="camera-overlay">
+                <ha-icon icon="mdi:play-circle-outline"></ha-icon>
+                ${null!==e?Z`<span class="camera-ts"
+                      >${function(t,e,o){const i=Math.round((o-e)/6e4);if(i<1)return _t(t,"time.just_now");if(i<60)return gt(t,"time.minutes_ago",{n:i});const n=Math.floor(i/60);if(n>=24)return gt(t,"time.days_ago",{d:Math.floor(n/24)});const s=i%60;return 0===s?gt(t,"time.hours_ago",{h:n}):gt(t,"time.hours_minutes_ago",{h:n,m:String(s).padStart(2,"0")})}(this.hass,e,Date.now())}</span
+                    >`:V}
+              </div>
+            `:Z`
+              <div class="camera-placeholder">
+                <ha-icon
+                  icon=${o?"mdi:video-off-outline":"mdi:paw"}
+                ></ha-icon>
+                <span
+                  >${_t(this.hass,o?"camera.stream_unavailable":"card.no_recent_activity")}</span
+                >
+              </div>
+            `}
+      </div>
+    `}}jt.styles=r`
+    :host {
+      display: block;
+    }
+
+    /* ── Thumbnail ───────────────────────────────────── */
+    .camera-panel {
+      position: relative;
+      height: 160px;
+      border-radius: 10px;
+      overflow: hidden;
+      background: var(--secondary-background-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .camera-panel--clickable {
+      cursor: pointer;
+    }
+
+    .camera-panel--clickable:focus-visible {
+      outline: 2px solid var(--primary-color);
+      outline-offset: 2px;
+    }
+
+    .camera-panel--clickable:hover .camera-overlay,
+    .camera-panel--clickable:focus-visible .camera-overlay {
+      background: linear-gradient(transparent, rgba(0, 0, 0, 0.75));
+    }
+
+    .camera-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .camera-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(transparent 40%, rgba(0, 0, 0, 0.55));
+      display: flex;
+      align-items: flex-end;
+      gap: 6px;
+      padding: 10px 12px;
+      color: #fff;
+      transition: background 0.2s;
+    }
+
+    .camera-overlay ha-icon {
+      --mdc-icon-size: 22px;
+    }
+
+    .camera-ts {
+      font-size: 0.8rem;
+    }
+
+    .camera-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      color: var(--secondary-text-color);
+      opacity: 0.5;
+    }
+
+    .camera-placeholder ha-icon {
+      --mdc-icon-size: 52px;
+    }
+
+    .camera-placeholder span {
+      font-size: 0.85rem;
+    }
+  `,t([ut({attribute:!1})],jt.prototype,"hass",void 0),t([ut()],jt.prototype,"entityId",void 0),t([ut()],jt.prototype,"eventEntityId",void 0),t([ut()],jt.prototype,"humanEntityId",void 0),t([ut()],jt.prototype,"contrabandEntityId",void 0),t([ut()],jt.prototype,"lastActivityEntityId",void 0),customElements.define("onlycat-camera-panel",jt);class Lt extends lt{constructor(){super(...arguments),this._ids=At(void 0,{})}static getStubConfig(){return{name:"",device:"",show_title:!0}}static getConfigElement(){return document.createElement("onlycat-home-assistant-card-editor")}setConfig(t){if(!t)throw new Error("Invalid configuration.");this._config={name:t.name??"",device:t.device??"",device_id:t.device_id??"",show_title:!1!==t.show_title,...t.entities?{entities:{...t.entities}}:{},...void 0!==t.history_days?{history_days:t.history_days}:{}}}getCardSize(){const t=this.offsetHeight;return t>0?Math.ceil(t/50):!1===this._config?.show_title?7:8}getGridOptions(){return{columns:12,min_columns:6,rows:"auto"}}_entity(t){return this.hass?.states?.[t]}_isOn(t){return"on"===this._entity(t)?.state}_isAvailable(t){const e=this._entity(t)?.state;return!!e&&"unavailable"!==e&&"unknown"!==e}_binaryState(t){const e=this._entity(t)?.state;return"on"===e||"off"===e?e:null}_onUnlock(){this._isAvailable(this._ids.unlock)&&this.hass.callService("button","press",{entity_id:this._ids.unlock})}_onRebootConfirm(){this._isAvailable(this._ids.reboot)&&(this.hass.callService("button","press",{entity_id:this._ids.reboot}),this._closeRebootConfirm())}_onPolicyChange(t){const e=t.target.value;e&&this.hass.callService("select","select_option",{entity_id:this._ids.policy,option:e})}_renderStatusPills(){const t=this._binaryState(this._ids.connectivity),e=this._binaryState(this._ids.lock),o=this._isOn(this._ids.errors),i=_t(this.hass,"card.unavailable");return Z`
       <div class="status-pills">
-        ${i?W`<ha-icon
+        ${o?Z`<ha-icon
               icon="mdi:alert-circle"
               class="error-pill-icon"
               title="${_t(this.hass,"card.errors")}"
-            ></ha-icon>`:Y}
-        <div class="pill ${e?"pill--locked":"pill--unlocked"}">
-          <ha-icon
-            icon="${e?"mdi:lock":"mdi:lock-open-variant"}"
-          ></ha-icon>
-          <span
-            >${_t(this.hass,e?"card.locked":"card.unlocked")}</span
-          >
-        </div>
-        <div class="pill ${t?"pill--online":"pill--offline"}">
-          <ha-icon icon="${t?"mdi:wifi":"mdi:wifi-off"}"></ha-icon>
-          <span
-            >${_t(this.hass,t?"card.connected":"card.offline")}</span
-          >
-        </div>
+            ></ha-icon>`:V}
+        ${null===e?Z`<div class="pill pill--lock pill--unknown">
+              <ha-icon icon="mdi:lock-question"></ha-icon>
+              <span>${i}</span>
+            </div>`:Z`<div
+              class="pill pill--lock ${"off"===e?"pill--locked":"pill--unlocked"}"
+            >
+              <ha-icon
+                icon="${"off"===e?"mdi:lock":"mdi:lock-open-variant"}"
+              ></ha-icon>
+              <span
+                >${_t(this.hass,"off"===e?"card.locked":"card.unlocked")}</span
+              >
+            </div>`}
+        ${null===t?Z`<div class="pill pill--connectivity pill--unknown">
+              <ha-icon icon="mdi:help-network-outline"></ha-icon>
+              <span>${i}</span>
+            </div>`:Z`<div
+              class="pill pill--connectivity ${"on"===t?"pill--online":"pill--offline"}"
+            >
+              <ha-icon
+                icon="${"on"===t?"mdi:wifi":"mdi:wifi-off"}"
+              ></ha-icon>
+              <span
+                >${_t(this.hass,"on"===t?"card.connected":"card.offline")}</span
+              >
+            </div>`}
       </div>
-    `}_renderPolicy(){const t=this._entity(this._policyEntityId),e=t?.attributes?.options??[],i=t?.state??"";return W`
+    `}_renderPolicy(){const t=this._entity(this._ids.policy),e=t?.attributes?.options??[],o=t?.state??"";return Z`
       <div class="row-section">
         <ha-icon icon="mdi:home-clock" class="section-icon"></ha-icon>
         <span class="section-label">${_t(this.hass,"card.policy")}</span>
-        ${t?W`
+        ${t&&this._isAvailable(this._ids.policy)?Z`
               <select
                 class="policy-select"
-                .value=${i}
+                .value=${o}
                 @change=${t=>this._onPolicyChange(t)}
               >
-                ${e.map(t=>W`<option value="${t}" ?selected=${t===i}>
-                      ${t}
+                ${e.map(e=>Z`<option value="${e}" ?selected=${e===o}>
+                      ${this.hass.formatEntityState?.(t,e)??e}
                     </option>`)}
               </select>
-            `:W`<span class="unavailable"
+            `:Z`<span class="unavailable"
               >${_t(this.hass,"card.unavailable")}</span
             >`}
       </div>
-    `}_renderActions(){return W`
+    `}_renderActions(){return Z`
       <div class="actions-row">
         <button
           class="action-btn action-btn--primary"
+          ?disabled=${!this._isAvailable(this._ids.unlock)}
           @click=${()=>this._onUnlock()}
           title="${_t(this.hass,"actions.unlock_title")}"
         >
@@ -790,90 +741,65 @@ const ht={attribute:!0,type:String,converter:v,reflect:!1,hasChanged:b},pt=(t=ht
 
         <button
           class="action-btn action-btn--secondary"
-          @click=${()=>this._showRebootConfirm=!0}
+          ?disabled=${!this._isAvailable(this._ids.reboot)}
+          aria-haspopup="dialog"
+          @click=${()=>this._openRebootConfirm()}
           title="${_t(this.hass,"actions.restart_title")}"
         >
           <ha-icon icon="mdi:restart"></ha-icon>
           <span>${_t(this.hass,"actions.restart")}</span>
         </button>
       </div>
-    `}_renderRebootModal(){return this._showRebootConfirm?W`
-      <div
-        class="modal-backdrop"
-        @click=${t=>{t.target===t.currentTarget&&(this._showRebootConfirm=!1)}}
+    `}_openRebootConfirm(){this._rebootDialog?.showModal()}_closeRebootConfirm(){this._rebootDialog?.open&&this._rebootDialog.close()}_renderRebootDialog(){return Z`
+      <dialog
+        class="reboot-dialog"
+        aria-labelledby="reboot-dialog-title"
+        aria-describedby="reboot-dialog-question"
+        @click=${t=>{t.target===t.currentTarget&&this._closeRebootConfirm()}}
+        @close=${()=>this._rebootButton?.focus()}
       >
-        <div class="modal modal--confirm" role="dialog" aria-modal="true">
-          <div class="modal-header">
-            <ha-icon
-              icon="mdi:alert-circle"
-              style="color:var(--warning-color,#ff9800)"
-            ></ha-icon>
-            <span>${_t(this.hass,"confirm_restart.title")}</span>
-            <button
-              class="modal-close"
-              @click=${()=>this._showRebootConfirm=!1}
-            >
-              <ha-icon icon="mdi:close"></ha-icon>
-            </button>
-          </div>
-          <div class="modal-body">
-            <p>${_t(this.hass,"confirm_restart.question")}</p>
-            <p class="confirm-note">
-              ${_t(this.hass,"confirm_restart.note")}
-            </p>
-          </div>
-          <div class="modal-footer">
-            <button
-              class="btn btn--cancel"
-              @click=${()=>this._showRebootConfirm=!1}
-            >
-              ${_t(this.hass,"actions.cancel")}
-            </button>
-            <button
-              class="btn btn--danger"
-              @click=${()=>this._onRebootConfirm()}
-            >
-              <ha-icon icon="mdi:restart"></ha-icon>
-              ${_t(this.hass,"actions.restart")}
-            </button>
-          </div>
+        <div class="modal-header">
+          <ha-icon
+            icon="mdi:alert-circle"
+            style="color:var(--warning-color,#ff9800)"
+          ></ha-icon>
+          <span id="reboot-dialog-title"
+            >${_t(this.hass,"confirm_restart.title")}</span
+          >
+          <button
+            class="modal-close"
+            aria-label="${_t(this.hass,"actions.cancel")}"
+            @click=${()=>this._closeRebootConfirm()}
+          >
+            <ha-icon icon="mdi:close"></ha-icon>
+          </button>
         </div>
-      </div>
-    `:Y}render(){if(!this.hass||!this._config)return Y;const t=this._config.name||_t(this.hass,"card.name_default");return this._config.device_id?W`
-      <ha-card>
-        ${this._config.show_title?W`
-              <div class="card-header">
-                <ha-icon icon="mdi:paw" class="header-icon"></ha-icon>
-                <span class="header-title">${t}</span>
-                ${this._renderStatusPills()}
-              </div>
-            `:W`<div class="card-header card-header--no-title">
-              ${this._renderStatusPills()}
-            </div>`}
-
-        <div class="card-body">
-          <onlycat-camera-panel
-            .hass=${this.hass}
-            .entityId=${this._cameraEntityId}
-            .eventEntityId=${this._eventEntityId}
-            .humanEntityId=${this._humanEntityId}
-            .contrabandEntityId=${this._contrabandEntityId}
-            .lastActivityEntityId=${this._lastActivityEntityId}
-          ></onlycat-camera-panel>
-          ${this._renderPolicy()} ${this._renderActions()}
-          <onlycat-activity-history
-            .hass=${this.hass}
-            .eventEntityId=${this._eventEntityId}
-            .contrabandEntityId=${this._contrabandEntityId}
-            .humanEntityId=${this._humanEntityId}
-            .lockEntityId=${this._lockEntityId}
-            .historyHours=${24}
-          ></onlycat-activity-history>
+        <div class="modal-body">
+          <p id="reboot-dialog-question">
+            ${_t(this.hass,"confirm_restart.question")}
+          </p>
+          <p class="confirm-note">
+            ${_t(this.hass,"confirm_restart.note")}
+          </p>
         </div>
-      </ha-card>
-
-      ${this._renderRebootModal()}
-    `:W`
+        <div class="modal-footer">
+          <button
+            class="btn btn--cancel"
+            autofocus
+            @click=${()=>this._closeRebootConfirm()}
+          >
+            ${_t(this.hass,"actions.cancel")}
+          </button>
+          <button
+            class="btn btn--danger"
+            @click=${()=>this._onRebootConfirm()}
+          >
+            <ha-icon icon="mdi:restart"></ha-icon>
+            ${_t(this.hass,"actions.restart")}
+          </button>
+        </div>
+      </dialog>
+    `}render(){if(!this.hass||!this._config)return V;const t=this._config.name||_t(this.hass,"card.name_default");if(!(e=this._config)||!(e.device||e.device_id||Object.values(e.entities??{}).some(Boolean)))return Z`
         <ha-card>
           <div
             class="card-body"
@@ -886,7 +812,41 @@ const ht={attribute:!0,type:String,converter:v,reflect:!1,hasChanged:b},pt=(t=ht
             ${_t(this.hass,"card.config_required")}
           </div>
         </ha-card>
-      `}}wt.styles=n`
+      `;var e;this._ids=At(this.hass,this._config);const o=this._ids;return Z`
+      <ha-card>
+        ${this._config.show_title?Z`
+              <div class="card-header">
+                <ha-icon icon="mdi:paw" class="header-icon"></ha-icon>
+                <span class="header-title">${t}</span>
+                ${this._renderStatusPills()}
+              </div>
+            `:Z`<div class="card-header card-header--no-title">
+              ${this._renderStatusPills()}
+            </div>`}
+
+        <div class="card-body">
+          <onlycat-camera-panel
+            .hass=${this.hass}
+            .entityId=${o.camera}
+            .eventEntityId=${o.event}
+            .humanEntityId=${o.human}
+            .contrabandEntityId=${o.contraband}
+            .lastActivityEntityId=${o.image}
+          ></onlycat-camera-panel>
+          ${this._renderPolicy()} ${this._renderActions()}
+          <onlycat-activity-history
+            .hass=${this.hass}
+            .eventEntityId=${o.event}
+            .contrabandEntityId=${o.contraband}
+            .humanEntityId=${o.human}
+            .lockEntityId=${o.lock}
+            .historyDays=${this._config.history_days??10}
+          ></onlycat-activity-history>
+        </div>
+      </ha-card>
+
+      ${this._renderRebootDialog()}
+    `}}Lt.styles=r`
     :host {
       display: block;
     }
@@ -948,20 +908,28 @@ const ht={attribute:!0,type:String,converter:v,reflect:!1,hasChanged:b},pt=(t=ht
     }
 
     .pill--locked {
-      background: rgba(76, 175, 80, 0.15);
-      color: #4caf50;
+background: var(--secondary-background-color);
+      background: color-mix(in srgb, var(--success-color, #43a047) 15%, transparent);
+      color: var(--success-color, #43a047);
     }
     .pill--unlocked {
-      background: rgba(255, 152, 0, 0.15);
-      color: #ff9800;
+background: var(--secondary-background-color);
+      background: color-mix(in srgb, var(--warning-color, #ffa600) 15%, transparent);
+      color: var(--warning-color, #ffa600);
     }
     .pill--online {
-      background: rgba(33, 150, 243, 0.12);
-      color: #29b6f6;
+background: var(--secondary-background-color);
+      background: color-mix(in srgb, var(--info-color, #039be5) 12%, transparent);
+      color: var(--info-color, #039be5);
     }
     .pill--offline {
-      background: rgba(244, 67, 54, 0.12);
-      color: #ef5350;
+background: var(--secondary-background-color);
+      background: color-mix(in srgb, var(--error-color, #db4437) 12%, transparent);
+      color: var(--error-color, #db4437);
+    }
+    .pill--unknown {
+      background: var(--secondary-background-color);
+      color: var(--secondary-text-color);
     }
     .error-pill-icon {
       color: var(--error-color, #e53935);
@@ -1041,7 +1009,12 @@ const ht={attribute:!0,type:String,converter:v,reflect:!1,hasChanged:b},pt=(t=ht
         transform 0.1s;
     }
 
-    .action-btn:active {
+    .action-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .action-btn:not(:disabled):active {
       transform: scale(0.96);
       filter: brightness(0.9);
     }
@@ -1061,39 +1034,24 @@ const ht={attribute:!0,type:String,converter:v,reflect:!1,hasChanged:b},pt=(t=ht
       border: 1px solid var(--divider-color, #ccc);
     }
 
-    /* ── Modals ───────────────────────────────────────────────── */
-    .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.6);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-      animation: fadeIn 0.15s ease;
-    }
-
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-      }
-      to {
-        opacity: 1;
-      }
-    }
-
-    .modal {
-      background: var(--card-background-color);
+    /* ── Confirmation dialog ──────────────────────────────────── */
+    .reboot-dialog {
+      border: none;
+      padding: 0;
       border-radius: 14px;
-      max-width: 520px;
+      max-width: 380px;
       width: 92%;
-      overflow: hidden;
+      background: var(--card-background-color);
+      color: var(--primary-text-color);
       box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    }
+
+    .reboot-dialog[open] {
       animation: slideUp 0.2s ease;
     }
 
-    .modal--confirm {
-      max-width: 380px;
+    .reboot-dialog::backdrop {
+      background: rgba(0, 0, 0, 0.6);
     }
 
     @keyframes slideUp {
@@ -1186,12 +1144,11 @@ const ht={attribute:!0,type:String,converter:v,reflect:!1,hasChanged:b},pt=(t=ht
     }
 
     .btn--danger {
-      background: var(--error-color, #ef5350);
-      color: #fff;
+      background: var(--error-color, #db4437);
+      color: var(--text-primary-color, #fff);
     }
 
     .btn ha-icon {
       --mdc-icon-size: 16px;
     }
-  `,t([ut({attribute:!1})],wt.prototype,"hass",void 0),t([mt()],wt.prototype,"_config",void 0),t([mt()],wt.prototype,"_showRebootConfirm",void 0),customElements.define("onlycat-home-assistant-card",wt),window.customCards=window.customCards||[],window.customCards.push({type:"onlycat-home-assistant-card",name:"OnlyCat Home Assistant Card",description:"Card to monitor and control your OnlyCat smart cat flap.",preview:!0,documentationURL:"https://github.com/OnlyCatAI/onlycat-home-assistant"});
-//# sourceMappingURL=onlycat-home-assistant-card.js.map
+  `,t([ut({attribute:!1})],Lt.prototype,"hass",void 0),t([mt()],Lt.prototype,"_config",void 0),t([yt("dialog.reboot-dialog")],Lt.prototype,"_rebootDialog",void 0),t([yt(".action-btn--secondary")],Lt.prototype,"_rebootButton",void 0),customElements.define("onlycat-home-assistant-card",Lt),window.customCards=window.customCards||[],window.customCards.push({type:"onlycat-home-assistant-card",name:"OnlyCat Home Assistant Card",description:"Card to monitor and control your OnlyCat smart cat flap.",preview:!0,documentationURL:"https://github.com/Gamso/onlycat-home-assistant-card"});
