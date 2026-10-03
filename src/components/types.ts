@@ -1,5 +1,7 @@
 // ─── Shared types ─────────────────────────────────────────────────────────────
 
+import type { EntityRole } from "../utils/entities";
+
 /** Subset of the Home Assistant frontend `hass` object used by the card. */
 export interface HassEntity {
   entity_id: string;
@@ -42,7 +44,12 @@ export interface HomeAssistant {
 
 export interface OnlyCatCardConfig {
   name?: string;
-  device_id: string;
+  /** HA device registry id of the OnlyCat device (set by the visual editor). */
+  device?: string;
+  /** OnlyCat device id used as entity-id prefix, e.g. `oc_0cbfb5801849`. */
+  device_id?: string;
+  /** Per-role entity overrides, for renamed entities. */
+  entities?: Partial<Record<EntityRole, string>>;
   show_title?: boolean;
   /** Number of past days reachable in the history frise (default 10). */
   history_days?: number;
