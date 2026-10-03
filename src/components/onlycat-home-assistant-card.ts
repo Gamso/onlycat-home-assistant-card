@@ -421,20 +421,24 @@ class OnlyCatHomeAssistantCard extends LitElement {
     }
 
     .pill--locked {
-      background: rgba(76, 175, 80, 0.15);
-      color: #4caf50;
+background: var(--secondary-background-color);
+      background: color-mix(in srgb, var(--success-color, #43a047) 15%, transparent);
+      color: var(--success-color, #43a047);
     }
     .pill--unlocked {
-      background: rgba(255, 152, 0, 0.15);
-      color: #ff9800;
+background: var(--secondary-background-color);
+      background: color-mix(in srgb, var(--warning-color, #ffa600) 15%, transparent);
+      color: var(--warning-color, #ffa600);
     }
     .pill--online {
-      background: rgba(33, 150, 243, 0.12);
-      color: #29b6f6;
+background: var(--secondary-background-color);
+      background: color-mix(in srgb, var(--info-color, #039be5) 12%, transparent);
+      color: var(--info-color, #039be5);
     }
     .pill--offline {
-      background: rgba(244, 67, 54, 0.12);
-      color: #ef5350;
+background: var(--secondary-background-color);
+      background: color-mix(in srgb, var(--error-color, #db4437) 12%, transparent);
+      color: var(--error-color, #db4437);
     }
     .pill--unknown {
       background: var(--secondary-background-color);
@@ -653,8 +657,8 @@ class OnlyCatHomeAssistantCard extends LitElement {
     }
 
     .btn--danger {
-      background: var(--error-color, #ef5350);
-      color: #fff;
+      background: var(--error-color, #db4437);
+      color: var(--text-primary-color, #fff);
     }
 
     .btn ha-icon {
