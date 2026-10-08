@@ -1,5 +1,6 @@
 import en from "./en.json";
 import fr from "./fr.json";
+import type { HomeAssistant } from "../components/types";
 
 type Section = keyof typeof en & string;
 type SectionKeys<S extends Section> = keyof (typeof en)[S] & string;
@@ -13,7 +14,7 @@ type Widen<T> = {
 };
 const translations: Record<string, Widen<typeof en>> = { en, fr };
 
-function resolveLang(hass: any): "en" | "fr" {
+function resolveLang(hass: HomeAssistant | undefined): "en" | "fr" {
   const lang: string = hass?.locale?.language ?? hass?.language ?? "en";
   return lang.toLowerCase().startsWith("fr") ? "fr" : "en";
 }
@@ -29,7 +30,7 @@ function get(dict: Widen<typeof en>, key: TranslationKey): string | undefined {
 }
 
 export function localize(
-  hass: any,
+  hass: HomeAssistant | undefined,
   key: TranslationKey,
 ): string {
   return (
@@ -40,7 +41,7 @@ export function localize(
 }
 
 export function localizeFormat(
-  hass: any,
+  hass: HomeAssistant | undefined,
   key: TranslationKey,
   vars: Record<string, string | number>,
 ): string {

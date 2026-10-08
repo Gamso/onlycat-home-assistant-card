@@ -20,7 +20,8 @@
   },
   "camera": {
     "title": "Dernière activité",
-    "stream_unavailable": "Flux indisponible."
+    "stream_unavailable": "Flux indisponible.",
+    "open": "Ouvrir la vidéo de la dernière activité"
   },
   "history": {
     "title": "Historique des activités",
@@ -32,8 +33,12 @@
     "row_flap": "Passage",
     "row_prey": "Proie",
     "row_human": "Humain",
-    "chart_now": "maintenant",
     "unlock_triggered": "Déclenché par déverrouillage",
+    "previous_event": "Événement précédent",
+    "next_event": "Événement suivant",
+    "close_zoom": "Fermer le zoom",
+    "previous_day": "Jour précédent",
+    "next_day": "Jour suivant",
     "kind_in": "Entrée",
     "kind_out": "Sortie",
     "kind_in_attempt": "Tentative d'entrée",
@@ -52,6 +57,7 @@
     "minutes_ago": "il y a {n} min",
     "hours_ago": "il y a {h}h",
     "hours_minutes_ago": "il y a {h}h{m}",
+    "days_ago": "il y a {d} j",
     "minutes": "{n} min",
     "hours_minutes": "{h}h{m}",
     "days": "{d} j"
@@ -62,10 +68,30 @@
     "note": "La chatière sera temporairement hors ligne pendant le redémarrage."
   },
   "editor": {
-    "card_name": "Nom de la carte",
+    "name": "Nom de la carte",
     "device": "Appareil OnlyCat",
-    "device_hint": "Sélectionnez le capteur de connectivité de votre appareil OnlyCat",
+    "device_hint": "Appareil créé par l'intégration OnlyCat",
     "show_title": "Afficher le titre",
-    "show_pets": "Afficher les chats"
+    "show_pets": "Afficher les chats",
+    "entities": "Entités",
+    "entities_hint": "Laisser vide pour les détecter depuis l'appareil. Utile seulement pour des entités renommées.",
+    "advanced": "Avancé",
+    "history_days": "Jours d'historique",
+    "history_days_hint": "Nombre de jours passés consultables dans la frise (par défaut {n})",
+    "device_id": "Identifiant OnlyCat (ancien format)",
+    "device_id_hint": "Préfixe des identifiants d'entité, ex. oc_0cbfb5801849. Conservé pour les configurations antérieures au sélecteur d'appareil."
+  },
+  "entity": {
+    "camera": "Vidéo de la dernière activité",
+    "image": "Image de la dernière activité",
+    "lock": "Verrou",
+    "connectivity": "Connectivité",
+    "errors": "Erreurs de l'appareil",
+    "event": "Événement de passage",
+    "contraband": "Événement proie",
+    "human": "Événement humain",
+    "policy": "Politique de la porte",
+    "unlock": "Bouton de déverrouillage",
+    "reboot": "Bouton de redémarrage"
   }
 }

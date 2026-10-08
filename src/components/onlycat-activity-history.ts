@@ -4,30 +4,40 @@ import { localize } from "../localize/localize";
 import {
   PASSAGE_COLOR,
   PASSAGE_ICON,
-  classifyPassage,
   isAttempt,
   isOutside,
 } from "./onlycat-pets";
 import type {
-  CompressedState,
+  HomeAssistant,
   ParsedPeriod,
   Passage,
   PassageKind,
   PetInfo,
 } from "./types";
+import {
+  EMPTY_TIMELINE,
+  historyMessage,
+  isPassage,
+  knownCatPassages,
+  parseTimeline,
+  timelineRows,
+  type HistoryResponse,
+  type TimelineData,
+  type TimelineRow,
+} from "../utils/history";
+import {
+  axisTicks,
+  dayWindow,
+  formatAxisTime,
+  formatTime,
+  resolveTimeZone,
+  useAmPm,
+  windowFraction,
+  type TimeWindow,
+} from "../utils/time";
 
-/** One line of the timeline. */
-interface Row {
-  key: string;
-  label: string;
-  color: string;
-  /** Hoverable bars (zoom-navigable). */
-  events: (ParsedPeriod | Passage)[];
-  /** Pet rows only: periods the pet spent outside, drawn under the bars. */
-  background?: ParsedPeriod[];
-  /** Bars are flap passages, colored by direction. */
-  passages: boolean;
-}
+/** Default number of past days reachable with ◄ (HA recorder keeps 10 days). */
+export const DEFAULT_HISTORY_DAYS = 10;
 
 const KIND_KEY = {
   in: "history.kind_in",
@@ -37,52 +47,55 @@ const KIND_KEY = {
   unknown: "history.kind_unknown",
 } as const;
 
+type TimelineEvent = ParsedPeriod | Passage;
+
 class OnlyCatActivityHistory extends LitElement {
-  @property({ attribute: false }) public hass!: any;
+  @property({ attribute: false }) public hass!: HomeAssistant;
   @property() public eventEntityId!: string;
   @property() public contrabandEntityId!: string;
   @property() public humanEntityId!: string;
   @property() public lockEntityId?: string;
   @property({ attribute: false }) public pets: PetInfo[] = [];
-  @property({ type: Number }) public historyHours = 24;
+  /** How many days back the user may navigate. */
+  @property({ type: Number }) public historyDays = DEFAULT_HISTORY_DAYS;
 
   @state() private _show = false;
   @state() private _loading = false;
   @state() private _hasFetched = false;
   @state() private _error: string | null = null;
-  @state() private _passages: Passage[] = [];
-  @state() private _prey: ParsedPeriod[] = [];
-  @state() private _human: ParsedPeriod[] = [];
-  @state() private _lockData: ParsedPeriod[] = [];
-  /** rfid → periods spent outside */
-  @state() private _outside: Record<string, ParsedPeriod[]> = {};
-  /** 0 = current window, 1 = one window back, etc. */
+  @state() private _data: TimelineData = EMPTY_TIMELINE;
+  /** Window the displayed data was fetched for; bars and axis both use it. */
+  @state() private _window: TimeWindow | null = null;
+  /** 0 = current day, 1 = one day back, etc. */
   @state() private _offsetPages = 0;
   @state() private _zoom: {
     centerTs: number;
     highlightStartTs: number;
     highlightEndTs: number;
-    color: string;
-    label: string;
     rowKey: string;
     eventIndex: number;
   } | null = null;
   private _zoomTimer?: ReturnType<typeof setTimeout>;
+  /** Incremented on every fetch: a response for an older request is dropped. */
+  private _requestId = 0;
 
   // ── Time window ───────────────────────────────────────────────────────────
 
-  private _timeWindow(): { start: Date; end: Date } {
-    // Calendar-day windows: midnight → midnight (or → now for current day).
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const start = new Date(
-      todayStart.getTime() - this._offsetPages * 86_400_000,
-    );
-    const end =
-      this._offsetPages === 0
-        ? new Date()
-        : new Date(start.getTime() + 86_400_000);
-    return { start, end };
+  private get _timeZone(): string {
+    return resolveTimeZone(this.hass);
+  }
+
+  private get _amPm(): boolean {
+    return useAmPm(this.hass?.locale);
+  }
+
+  private get _lang(): string {
+    return this.hass?.locale?.language ?? "en";
+  }
+
+  /** Window of the page currently selected (may still be loading). */
+  private _targetWindow(): TimeWindow {
+    return dayWindow(Date.now(), this._offsetPages, this._timeZone);
   }
 
   private _isEntityOn(id: string): boolean {
@@ -91,212 +104,50 @@ class OnlyCatActivityHistory extends LitElement {
 
   // ── History loading ───────────────────────────────────────────────────────
 
-  /** Time of the last *state* change (ms). `lc` is omitted when == `lu`. */
-  private static _ts(e: CompressedState): number {
-    return (e.lc ?? e.lu) * 1000;
-  }
-
-  /** Turn a state series into the periods during which `isActive` holds. */
-  private static _periods(
-    series: CompressedState[],
-    isActive: (s: string) => boolean,
-    startMs: number,
-    endMs: number,
-  ): ParsedPeriod[] {
-    const range = endMs - startMs;
-    const result: ParsedPeriod[] = [];
-    let since: number | null = null;
-    for (const e of series) {
-      const ts = Math.max(startMs, OnlyCatActivityHistory._ts(e));
-      const active = isActive(e.s);
-      if (active && since === null) {
-        since = ts;
-      } else if (!active && since !== null) {
-        result.push({
-          start: (since - startMs) / range,
-          end: Math.min(1, (ts - startMs) / range),
-          startTs: since,
-          endTs: ts,
-        });
-        since = null;
-      }
-    }
-    if (since !== null) {
-      result.push({
-        start: (since - startMs) / range,
-        end: 1,
-        startTs: since,
-        endTs: endMs,
-      });
-    }
-    return result;
-  }
-
-  /**
-   * Flap events with their direction and pets.
-   *
-   * The event sensor turns on when an event starts; the summary (direction,
-   * action, rfidCode) arrives as attribute-only updates, sometimes after the
-   * sensor is already off, and a later event update can wipe it again. So
-   * attributes are merged per `eventId` across every row, keeping the last
-   * non-empty value, rather than read off a single state.
-   */
-  private static _parsePassages(
-    series: CompressedState[],
-    startMs: number,
-    endMs: number,
-  ): Passage[] {
-    const range = endMs - startMs;
-    const out: Passage[] = [];
-    const byId = new Map<number, Passage>();
-    const summary = new Map<Passage, { direction?: string; action?: string }>();
-    let open: Passage | null = null;
-
-    for (const e of series) {
-      const ts = Math.max(startMs, OnlyCatActivityHistory._ts(e));
-      const a = e.a ?? {};
-      const eventId: number | undefined =
-        typeof a.eventId === "number" ? a.eventId : undefined;
-      const on = e.s === "on";
-
-      const isNewEvent =
-        on &&
-        (!open ||
-          (eventId !== undefined &&
-            open.eventId !== undefined &&
-            eventId !== open.eventId));
-      if (isNewEvent) {
-        if (open) open.endTs = ts;
-        open = {
-          start: 0,
-          end: 0,
-          startTs: ts,
-          endTs: endMs,
-          eventId,
-          kind: "unknown",
-          rfids: [],
-        };
-        out.push(open);
-        summary.set(open, {});
-      }
-
-      let target = eventId !== undefined ? byId.get(eventId) : undefined;
-      if (!target && on && open) target = open;
-      if (target) {
-        if (target.eventId === undefined && eventId !== undefined) {
-          target.eventId = eventId;
-        }
-        if (target.eventId !== undefined) byId.set(target.eventId, target);
-        const sum = summary.get(target)!;
-        if (a.direction) sum.direction = a.direction;
-        if (a.action) sum.action = a.action;
-        const codes: string[] = [
-          ...(a.rfidCode ? [a.rfidCode] : []),
-          ...(Array.isArray(a.rfidCodes) ? a.rfidCodes : []),
-        ];
-        for (const code of codes) {
-          const c = String(code).toLowerCase();
-          if (!target.rfids.includes(c)) target.rfids.push(c);
-        }
-      }
-
-      if (!on && open) {
-        open.endTs = ts;
-        open = null;
-      }
-    }
-
-    for (const p of out) {
-      const sum = summary.get(p)!;
-      p.kind = classifyPassage(sum.direction, sum.action);
-      p.start = (p.startTs - startMs) / range;
-      p.end = Math.min(1, (p.endTs - startMs) / range);
-    }
-    return out;
-  }
-
   private async _load() {
-    if (this._loading) return;
+    const requestId = ++this._requestId;
+    const win = this._targetWindow();
+    // Pets are read when the request starts: the response is parsed against
+    // the trackers it was asked for.
+    const pets = this.pets;
     this._loading = true;
     this._error = null;
     try {
-      const { start, end } = this._timeWindow();
-      const startMs = start.getTime();
-      const endMs = end.getTime();
-      const entityIds = [
-        this.eventEntityId,
-        this.contrabandEntityId,
-        this.humanEntityId,
-        ...(this.lockEntityId ? [this.lockEntityId] : []),
-        ...this.pets.map((p) => p.entityId),
-      ];
+      // Entities that could not be resolved are left out of the query.
+      const ids = {
+        event: this.eventEntityId,
+        contraband: this.contrabandEntityId,
+        human: this.humanEntityId,
+        lock: this.lockEntityId,
+      };
+      const queried = [
+        ...Object.values(ids),
+        ...pets.map((p) => p.entityId),
+      ].filter((id): id is string => !!id);
+      const raw = queried.length
+        ? await this.hass.callWS<HistoryResponse>(
+            historyMessage(queried, win.start, win.end),
+          )
+        : {};
+      if (requestId !== this._requestId) return;
 
-      // Websocket history keeps attributes (eventId, direction, rfidCode…),
-      // which the REST `no_attributes` query used to drop.
-      const raw = (await this.hass.callWS({
-        type: "history/history_during_period",
-        start_time: start.toISOString(),
-        end_time: end.toISOString(),
-        entity_ids: entityIds,
-        include_start_time_state: true,
-        significant_changes_only: false,
-        minimal_response: false,
-        no_attributes: false,
-      })) as Record<string, CompressedState[]>;
-
-      const series = (id?: string) => (id && raw?.[id]) || [];
-      const isOn = (s: string) => s === "on";
-
-      this._passages = OnlyCatActivityHistory._parsePassages(
-        series(this.eventEntityId),
-        startMs,
-        endMs,
+      this._data = parseTimeline(
+        raw,
+        ids,
+        pets,
+        isOutside,
+        win.start,
+        win.end,
       );
-      this._prey = OnlyCatActivityHistory._periods(
-        series(this.contrabandEntityId),
-        isOn,
-        startMs,
-        endMs,
-      );
-      this._human = OnlyCatActivityHistory._periods(
-        series(this.humanEntityId),
-        isOn,
-        startMs,
-        endMs,
-      );
-      this._lockData = OnlyCatActivityHistory._periods(
-        series(this.lockEntityId),
-        isOn,
-        startMs,
-        endMs,
-      );
-      const outside: Record<string, ParsedPeriod[]> = {};
-      for (const pet of this.pets) {
-        outside[pet.rfid] = OnlyCatActivityHistory._periods(
-          series(pet.entityId),
-          isOutside,
-          startMs,
-          endMs,
-        );
-      }
-      this._outside = outside;
-
-      console.debug(
-        "[OnlyCat] history parsed",
-        `passages:${this._passages.length}`,
-        `prey:${this._prey.length}`,
-        `human:${this._human.length}`,
-        this._passages.map(
-          (p) =>
-            `${new Date(p.startTs).toISOString()} #${p.eventId ?? "?"} ${p.kind} [${p.rfids.join(",")}]`,
-        ),
-      );
+      this._window = win;
+      this._zoom = null;
       this._hasFetched = true;
     } catch (e) {
+      if (requestId !== this._requestId) return;
       console.error("[OnlyCat] history error", e);
       this._error = localize(this.hass, "history.error");
     } finally {
-      this._loading = false;
+      if (requestId === this._requestId) this._loading = false;
     }
   }
 
@@ -308,60 +159,30 @@ class OnlyCatActivityHistory extends LitElement {
   }
 
   private _navPrev() {
+    if (this._loading || this._offsetPages >= this.historyDays) return;
     this._offsetPages++;
-    this._zoom = null;
     this._load();
   }
 
   private _navNext() {
-    if (this._offsetPages > 0) {
-      this._offsetPages--;
-      this._zoom = null;
-      this._load();
-    }
+    if (this._loading || this._offsetPages === 0) return;
+    this._offsetPages--;
+    this._load();
   }
 
   private _formatDateRange(): string {
-    const { start } = this._timeWindow();
-    const lang = this.hass?.locale?.language ?? "en";
-    return new Intl.DateTimeFormat(lang, {
+    const { start, timeZone } = this._targetWindow();
+    return new Intl.DateTimeFormat(this._lang, {
+      timeZone,
       weekday: "short",
       month: "short",
       day: "numeric",
-    }).format(start);
-  }
-
-  /** Returns axis tick marks with label + fractional position (0–1). */
-  private _axisLabels(): { label: string; frac: number }[] {
-    const { start, end } = this._timeWindow();
-    const totalMs = end.getTime() - start.getTime();
-    const fmt = (d: Date): string => {
-      const h = d.getHours();
-      const m = d.getMinutes();
-      return m === 0 ? `${h}h` : `${h}h${String(m).padStart(2, "0")}`;
-    };
-    const result: { label: string; frac: number }[] = [];
-    // Fixed 6-hour marks that fall within the window
-    for (let h = 0; h <= 24; h += 6) {
-      const ts = start.getTime() + h * 3_600_000;
-      if (ts > end.getTime() + 1) break;
-      const frac = Math.min(1, (ts - start.getTime()) / totalMs);
-      result.push({ label: h === 0 ? "0h" : fmt(new Date(ts)), frac });
-    }
-    // For current day, append "now" if it's not already close to the last mark
-    if (this._offsetPages === 0) {
-      const lastFrac = result[result.length - 1]?.frac ?? 0;
-      if (lastFrac < 0.97) {
-        result.push({ label: fmt(end), frac: 1 });
-      }
-    }
-    return result;
+    }).format(new Date(start));
   }
 
   private _formatTooltip(startTs: number, endTs: number): string {
-    const lang = this.hass?.locale?.language ?? "en";
-    const fmtTime = (d: Date) =>
-      d.toLocaleTimeString(lang, { hour: "2-digit", minute: "2-digit" });
+    const fmtTime = (ts: number) =>
+      formatTime(ts, this._timeZone, this._lang, this._amPm);
     const durS = Math.round((endTs - startTs) / 1000);
     const durStr =
       durS < 60
@@ -371,7 +192,7 @@ class OnlyCatActivityHistory extends LitElement {
               durS % 60 > 0 ? " " + (durS % 60) + "s" : ""
             }`
           : `${Math.floor(durS / 3600)}h ${Math.floor((durS % 3600) / 60)}min`;
-    return `${fmtTime(new Date(startTs))} – ${fmtTime(new Date(endTs))} (${durStr})`;
+    return `${fmtTime(startTs)} – ${fmtTime(endTs)} (${durStr})`;
   }
 
   private _kindLabel(kind: PassageKind): string {
@@ -393,79 +214,53 @@ class OnlyCatActivityHistory extends LitElement {
     ].join(" · ");
   }
 
-  private static _isPassage(ev: ParsedPeriod | Passage): ev is Passage {
-    return "kind" in ev;
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+    clearTimeout(this._zoomTimer);
   }
 
   // ── Rows ──────────────────────────────────────────────────────────────────
 
-  /**
-   * Passages of the known cats only: unknown visitors and passages where no
-   * chip was read are hidden. Without any known cat (e.g. an integration older
-   * than v2.0.7), every passage is kept, since none could be attributed.
-   */
-  private _catPassages(): Passage[] {
-    if (!this.pets.length) return this._passages;
-    const known = new Set(this.pets.map((p) => p.rfid));
-    return this._passages.filter((p) => p.rfids.some((r) => known.has(r)));
-  }
-
-  private _rows(): Row[] {
+  private _rows(): TimelineRow[] {
     // Colors: use inline style so CSS custom properties resolve correctly.
     // SVG fill="" attribute does NOT evaluate var(), style="" does.
-    const petRows: Row[] = this.pets.map((pet) => ({
-      key: `pet:${pet.rfid}`,
-      label: pet.name,
-      color: pet.color,
-      events: this._passages.filter((p) => p.rfids.includes(pet.rfid)),
-      background: this._outside[pet.rfid] ?? [],
-      passages: true,
-    }));
-    return [
-      {
-        key: "flap",
+    return timelineRows(this._data, this.pets, {
+      flap: {
         label: localize(this.hass, "history.row_flap"),
-        color: "var(--history-flap-color, #29b6f6)",
-        events: this._catPassages(),
-        passages: true,
+        color: "var(--oc-flap-color)",
       },
-      ...petRows,
-      {
-        key: "prey",
+      prey: {
         label: localize(this.hass, "history.row_prey"),
-        color: "var(--history-contraband-color, #e53935)",
-        events: this._prey,
-        passages: false,
+        color: "var(--oc-contraband-color)",
       },
-      {
-        key: "human",
+      human: {
         label: localize(this.hass, "history.row_human"),
-        color: "var(--history-human-color, #ab47bc)",
-        events: this._human,
-        passages: false,
+        color: "var(--oc-human-color)",
       },
-    ];
+    });
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
+  //
+  // Loading indicator: ha-spinner replaced ha-circular-progress in the HA
+  // frontend (2025.4); the latter no longer exists in current releases but is
+  // kept for older ones.
 
-  private _onBarEnter(row: Row, ev: ParsedPeriod | Passage) {
+  private _onBarEnter(row: TimelineRow, ev: TimelineEvent) {
     clearTimeout(this._zoomTimer);
     this._zoom = {
       centerTs: (ev.startTs + ev.endTs) / 2,
       highlightStartTs: ev.startTs,
       highlightEndTs: ev.endTs,
-      color: row.color,
-      label: row.label,
       rowKey: row.key,
-      eventIndex: row.events.indexOf(ev),
+      eventIndex: Math.max(0, row.events.indexOf(ev)),
     };
   }
 
   private _zoomNavigate(delta: number) {
     if (!this._zoom) return;
-    const events =
-      this._rows().find((r) => r.key === this._zoom!.rowKey)?.events ?? [];
+    const rowKey = this._zoom.rowKey;
+    const events = this._rows().find((r) => r.key === rowKey)?.events ?? [];
     const newIdx = this._zoom.eventIndex + delta;
     if (newIdx < 0 || newIdx >= events.length) return;
     const ev = events[newIdx];
@@ -482,7 +277,45 @@ class OnlyCatActivityHistory extends LitElement {
     clearTimeout(this._zoomTimer);
     this._zoomTimer = setTimeout(() => {
       this._zoom = null;
-    }, 200) as unknown as ReturnType<typeof setTimeout>;
+    }, 200);
+  }
+
+  // Hover opens the zoom with a mouse only: on touch screens (companion app)
+  // the emulated mouseenter fired by a tap is never followed by mouseleave.
+  // A tap (or click) on a bar toggles the zoom instead; the zoom has a close
+  // button.
+
+  private _onBarPointerEnter(
+    e: PointerEvent,
+    row: TimelineRow,
+    ev: TimelineEvent,
+  ) {
+    if (e.pointerType !== "mouse") return;
+    e.stopPropagation();
+    this._onBarEnter(row, ev);
+  }
+
+  private _onBarClick(e: Event, row: TimelineRow, ev: TimelineEvent) {
+    e.stopPropagation();
+    const isMouse = (e as PointerEvent).pointerType === "mouse";
+    const sameBar =
+      this._zoom?.rowKey === row.key &&
+      this._zoom.highlightStartTs === ev.startTs &&
+      this._zoom.highlightEndTs === ev.endTs;
+    if (sameBar && !isMouse) {
+      this._closeZoom();
+    } else {
+      this._onBarEnter(row, ev);
+    }
+  }
+
+  private _onPointerLeave(e: PointerEvent) {
+    if (e.pointerType === "mouse") this._onBarLeave();
+  }
+
+  private _closeZoom() {
+    clearTimeout(this._zoomTimer);
+    this._zoom = null;
   }
 
   /**
@@ -490,14 +323,14 @@ class OnlyCatActivityHistory extends LitElement {
    * didn't cross the flap are hollow with a dashed outline.
    */
   private _renderBar(
-    row: Row,
-    ev: ParsedPeriod | Passage,
+    row: TimelineRow,
+    ev: TimelineEvent,
     x: number,
     w: number,
     opacity: string,
     interactive: boolean,
   ) {
-    const passage = OnlyCatActivityHistory._isPassage(ev) ? ev : null;
+    const passage = isPassage(ev) ? ev : null;
     const color = passage ? PASSAGE_COLOR[passage.kind] : row.color;
     const title = passage
       ? this._passageTooltip(passage)
@@ -505,15 +338,13 @@ class OnlyCatActivityHistory extends LitElement {
     const style =
       passage && isAttempt(passage.kind)
         ? `fill: ${color}; fill-opacity: 0.2; stroke: ${color}; stroke-width: 1.5; stroke-dasharray: 3 2;`
-        : `fill: ${color}; stroke: rgba(255,255,255,0.5); stroke-width: 0.5;`;
+        : `fill: ${color}; stroke: var(--card-background-color, #fff); stroke-opacity: 0.5; stroke-width: 0.5;`;
     return svg`<g
         class="event-bar"
-        @mouseenter=${interactive
-          ? (e: MouseEvent) => {
-              e.stopPropagation();
-              this._onBarEnter(row, ev);
-            }
+        @pointerenter=${interactive
+          ? (e: PointerEvent) => this._onBarPointerEnter(e, row, ev)
           : null}
+        @click=${interactive ? (e: Event) => this._onBarClick(e, row, ev) : null}
       >
       <title>${title}</title>
       <rect x="${x}" y="4" width="${w}" height="20" rx="3"
@@ -523,7 +354,7 @@ class OnlyCatActivityHistory extends LitElement {
 
   /** Pet rows: the periods spent outside, as a thin band under the bars. */
   private _renderOutside(
-    row: Row,
+    row: TimelineRow,
     toX: (p: ParsedPeriod) => [number, number],
   ) {
     const label = localize(this.hass, "history.outside");
@@ -537,7 +368,7 @@ class OnlyCatActivityHistory extends LitElement {
     });
   }
 
-  private _renderZoom(row: Row) {
+  private _renderZoom(row: TimelineRow) {
     const zoom = this._zoom!;
     // Adaptive zoom: window = 30× event duration, clamped between 30 min and 120 min.
     // Short events (2s) get a 30-min window; long events (3min) get 120min.
@@ -549,18 +380,10 @@ class OnlyCatActivityHistory extends LitElement {
     const toX = (ts: number) =>
       Math.min(600, Math.max(0, ((ts - zStartTs) / range) * 600));
 
-    const lang = this.hass?.locale?.language ?? "en";
     const fmtTime = (ts: number) =>
-      new Date(ts).toLocaleTimeString(lang, {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-      });
-    const fmtAxis = (ts: number) => {
-      const d = new Date(ts);
-      const m = d.getMinutes();
-      return `${d.getHours()}h${m > 0 ? String(m).padStart(2, "0") : ""}`;
-    };
+      formatTime(ts, this._timeZone, this._lang, this._amPm, true);
+    const fmtAxis = (ts: number) =>
+      formatAxisTime(ts, this._timeZone, this._amPm);
 
     const durS = Math.round(
       (zoom.highlightEndTs - zoom.highlightStartTs) / 1000,
@@ -576,7 +399,7 @@ class OnlyCatActivityHistory extends LitElement {
     const OVERLAP_TOLERANCE_MS = 30_000;
     const isUnlockTriggered =
       row.passages &&
-      this._lockData.some(
+      this._data.lock.some(
         (lp) =>
           lp.startTs <= zoom.highlightEndTs + OVERLAP_TOLERANCE_MS &&
           lp.endTs >= zoom.highlightStartTs - OVERLAP_TOLERANCE_MS,
@@ -584,8 +407,7 @@ class OnlyCatActivityHistory extends LitElement {
 
     const events = row.events;
     const current = events[zoom.eventIndex];
-    const passage =
-      current && OnlyCatActivityHistory._isPassage(current) ? current : null;
+    const passage = current && isPassage(current) ? current : null;
     const names = passage ? this._petNames(passage) : [];
     const visible = events.filter(
       (e) => e.endTs >= zStartTs && e.startTs <= zEndTs,
@@ -594,8 +416,8 @@ class OnlyCatActivityHistory extends LitElement {
     return html`
       <div
         class="zoom-overlay"
-        @mouseenter=${() => clearTimeout(this._zoomTimer)}
-        @mouseleave=${this._onBarLeave}
+        @pointerenter=${() => clearTimeout(this._zoomTimer)}
+        @pointerleave=${this._onPointerLeave}
       >
         <div class="zoom-header-info">
           <span class="zoom-time">${fmtTime(zoom.highlightStartTs)}</span>
@@ -628,7 +450,7 @@ class OnlyCatActivityHistory extends LitElement {
               e.stopPropagation();
               this._zoomNavigate(-1);
             }}
-            title="Previous event"
+            title="${localize(this.hass, "history.previous_event")}"
           >
             <ha-icon icon="mdi:chevron-left"></ha-icon>
           </button>
@@ -639,9 +461,19 @@ class OnlyCatActivityHistory extends LitElement {
               e.stopPropagation();
               this._zoomNavigate(1);
             }}
-            title="Next event"
+            title="${localize(this.hass, "history.next_event")}"
           >
             <ha-icon icon="mdi:chevron-right"></ha-icon>
+          </button>
+          <button
+            class="nav-btn zoom-nav-btn zoom-close-btn"
+            @click=${(e: Event) => {
+              e.stopPropagation();
+              this._closeZoom();
+            }}
+            title="${localize(this.hass, "history.close_zoom")}"
+          >
+            <ha-icon icon="mdi:close"></ha-icon>
           </button>
         </div>
         <div class="zoom-track">
@@ -667,7 +499,7 @@ class OnlyCatActivityHistory extends LitElement {
   }
 
   private _renderLegend() {
-    const passages = this._catPassages();
+    const passages = knownCatPassages(this._data.passages, this.pets);
     const hasDirection = passages.some((p) => p.kind !== "unknown");
     const hasAttempt = passages.some((p) => isAttempt(p.kind));
     if (!hasDirection && !this.pets.length) return nothing;
@@ -680,6 +512,7 @@ class OnlyCatActivityHistory extends LitElement {
                   <span
                     class="legend-swatch"
                     style="background: ${PASSAGE_COLOR[k]}"
+                    aria-hidden="true"
                   ></span>
                   ${this._kindLabel(k)}
                 </span>`,
@@ -687,13 +520,19 @@ class OnlyCatActivityHistory extends LitElement {
           : nothing}
         ${hasAttempt
           ? html`<span class="legend-item">
-              <span class="legend-swatch legend-swatch--attempt"></span>
+              <span
+                class="legend-swatch legend-swatch--attempt"
+                aria-hidden="true"
+              ></span>
               ${localize(this.hass, "history.attempt")}
             </span>`
           : nothing}
         ${this.pets.length
           ? html`<span class="legend-item">
-              <span class="legend-swatch legend-swatch--outside"></span>
+              <span
+                class="legend-swatch legend-swatch--outside"
+                aria-hidden="true"
+              ></span>
               ${localize(this.hass, "history.outside")}
             </span>`
           : nothing}
@@ -701,8 +540,12 @@ class OnlyCatActivityHistory extends LitElement {
     `;
   }
 
-  private _renderChart() {
+  private _renderChart(win: TimeWindow) {
     const rows = this._rows();
+    const toX = (b: ParsedPeriod): [number, number] => [
+      windowFraction(win, b.startTs) * 600,
+      windowFraction(win, b.endTs) * 600,
+    ];
 
     return html`
       <div class="history-chart">
@@ -710,7 +553,8 @@ class OnlyCatActivityHistory extends LitElement {
           <button
             class="nav-btn"
             @click=${this._navPrev}
-            title="Previous period"
+            ?disabled=${this._loading || this._offsetPages >= this.historyDays}
+            title="${localize(this.hass, "history.previous_day")}"
           >
             <ha-icon icon="mdi:chevron-left"></ha-icon>
           </button>
@@ -718,14 +562,14 @@ class OnlyCatActivityHistory extends LitElement {
           <button
             class="nav-btn"
             @click=${this._navNext}
-            ?disabled=${this._offsetPages === 0}
-            title="Next period"
+            ?disabled=${this._loading || this._offsetPages === 0}
+            title="${localize(this.hass, "history.next_day")}"
           >
             <ha-icon icon="mdi:chevron-right"></ha-icon>
           </button>
         </div>
 
-        <div class="chart-rows">
+        <div class="chart-rows ${this._loading ? "chart-rows--loading" : ""}">
           ${rows.map(
             (row) => html`
               <div class="chart-row">
@@ -740,22 +584,20 @@ class OnlyCatActivityHistory extends LitElement {
                     class="chart-svg"
                     viewBox="0 0 600 28"
                     preserveAspectRatio="none"
-                    @mouseleave=${this._onBarLeave}
+                    @pointerleave=${this._onPointerLeave}
                   >
-                    ${this._renderOutside(row, (b) => [
-                      b.start * 600,
-                      b.end * 600,
-                    ])}
-                    ${row.events.map((ev) =>
-                      this._renderBar(
+                    ${this._renderOutside(row, toX)}
+                    ${row.events.map((ev) => {
+                      const [x, x2] = toX(ev);
+                      return this._renderBar(
                         row,
                         ev,
-                        Math.max(0, ev.start * 600),
-                        Math.max(4, (ev.end - ev.start) * 600),
+                        x,
+                        Math.max(4, x2 - x),
                         "0.85",
                         true,
-                      ),
-                    )}
+                      );
+                    })}
                   </svg>
                 </div>
                 <span class="chart-count">${row.events.length}</span>
@@ -770,7 +612,7 @@ class OnlyCatActivityHistory extends LitElement {
         <div class="chart-axis">
           <div></div>
           <div class="chart-axis-inner">
-            ${this._axisLabels().map(
+            ${axisTicks(win, this._amPm).map(
               ({ label, frac }) =>
                 html`<span style="left: ${frac * 100}%">${label}</span>`,
             )}
@@ -830,10 +672,13 @@ class OnlyCatActivityHistory extends LitElement {
         ${this._show
           ? this._loading && !this._hasFetched
             ? html`<div class="history-status">
-                <ha-circular-progress
-                  active
-                  size="small"
-                ></ha-circular-progress>
+                ${customElements.get("ha-spinner")
+                  ? html`<ha-spinner size="small"></ha-spinner>`
+                  : html`<ha-circular-progress
+                      active
+                      indeterminate
+                      size="small"
+                    ></ha-circular-progress>`}
                 <span>${localize(this.hass, "history.loading")}</span>
               </div>`
             : this._error
@@ -841,7 +686,9 @@ class OnlyCatActivityHistory extends LitElement {
                   <ha-icon icon="mdi:alert-circle-outline"></ha-icon>
                   <span>${this._error}</span>
                 </div>`
-              : this._renderChart()
+              : this._window
+                ? this._renderChart(this._window)
+                : nothing
           : nothing}
       </div>
     `;
@@ -850,6 +697,18 @@ class OnlyCatActivityHistory extends LitElement {
   static styles = css`
     :host {
       display: block;
+      /* Theme colours; --history-*-color stay available as overrides. */
+      --oc-flap-color: var(--history-flap-color, var(--info-color, #039be5));
+      --oc-contraband-color: var(
+        --history-contraband-color,
+        var(--error-color, #db4437)
+      );
+      --oc-human-color: var(--history-human-color, var(--purple-color, #926bc7));
+      --oc-track-color: color-mix(
+        in srgb,
+        var(--primary-text-color, #212121) 8%,
+        transparent
+      );
     }
 
     /* ── Toggle button ───────────────────────────────── */
@@ -912,18 +771,21 @@ class OnlyCatActivityHistory extends LitElement {
     }
 
     .event-badge--flap {
-      background: rgba(41, 182, 246, 0.15);
-      color: #29b6f6;
+background: var(--secondary-background-color);
+      background: color-mix(in srgb, var(--oc-flap-color) 15%, transparent);
+      color: var(--oc-flap-color);
     }
 
     .event-badge--contraband {
-      background: rgba(229, 57, 53, 0.15);
-      color: #e53935;
+background: var(--secondary-background-color);
+      background: color-mix(in srgb, var(--oc-contraband-color) 15%, transparent);
+      color: var(--oc-contraband-color);
     }
 
     .event-badge--human {
-      background: rgba(171, 71, 188, 0.15);
-      color: #ab47bc;
+background: var(--secondary-background-color);
+      background: color-mix(in srgb, var(--oc-human-color) 15%, transparent);
+      color: var(--oc-human-color);
     }
 
     /* ── Loading / error ─────────────────────────────── */
@@ -1016,6 +878,11 @@ class OnlyCatActivityHistory extends LitElement {
       gap: 6px;
     }
 
+    .chart-rows--loading {
+      opacity: 0.5;
+      transition: opacity 0.15s;
+    }
+
     .chart-row {
       display: grid;
       grid-template-columns: 64px 1fr 28px;
@@ -1041,7 +908,7 @@ class OnlyCatActivityHistory extends LitElement {
 
     .chart-track {
       height: 28px;
-      background: rgba(0, 0, 0, 0.06);
+      background: var(--oc-track-color);
       border-radius: 5px;
       overflow: hidden;
     }
@@ -1141,7 +1008,8 @@ class OnlyCatActivityHistory extends LitElement {
     .zoom-time {
       font-size: 0.7rem;
       color: var(--secondary-text-color);
-      background: rgba(41, 182, 246, 0.15);
+background: var(--secondary-background-color);
+      background: color-mix(in srgb, var(--oc-flap-color) 15%, transparent);
       padding: 1px 6px;
       border-radius: 8px;
     }
@@ -1156,12 +1024,12 @@ class OnlyCatActivityHistory extends LitElement {
 
     .zoom-unlock-icon {
       --mdc-icon-size: 14px;
-      color: #ff9800;
+      color: var(--warning-color, #ff9800);
     }
 
     .zoom-track {
       height: 28px;
-      background: rgba(0, 0, 0, 0.06);
+      background: var(--oc-track-color);
       border-radius: 4px;
       overflow: hidden;
     }
@@ -1172,14 +1040,6 @@ class OnlyCatActivityHistory extends LitElement {
       display: block;
     }
 
-    .zoom-axis {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 2px;
-      font-size: 0.62rem;
-      color: var(--secondary-text-color);
-      opacity: 0.7;
-    }
     .zoom-kind {
       display: inline-flex;
       align-items: center;
@@ -1196,6 +1056,15 @@ class OnlyCatActivityHistory extends LitElement {
       font-size: 0.7rem;
       font-weight: 600;
       color: var(--primary-text-color);
+    }
+
+    .zoom-axis {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 2px;
+      font-size: 0.62rem;
+      color: var(--secondary-text-color);
+      opacity: 0.7;
     }
 
     /* ── Legend ──────────────────────────────────────────── */

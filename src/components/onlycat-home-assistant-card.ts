@@ -1,64 +1,34 @@
 import { LitElement, html, nothing, css } from "lit";
-import { property, state } from "lit/decorators.js";
+import { property, query, state } from "lit/decorators.js";
 import "./onlycat-home-assistant-card-editor";
 import "./onlycat-camera-panel";
-import "./onlycat-activity-history";
+import { DEFAULT_HISTORY_DAYS } from "./onlycat-activity-history";
 import "./onlycat-pet-status";
 import { discoverPets } from "./onlycat-pets";
-import { localize, localizeFormat } from "../localize/localize";
-import type { OnlyCatCardConfig, PetInfo } from "./types";
+import { localize } from "../localize/localize";
+import type { HomeAssistant, OnlyCatCardConfig, PetInfo } from "./types";
+import {
+  isConfigured,
+  resolveEntities,
+  type ResolvedEntities,
+} from "../utils/entities";
 
 class OnlyCatHomeAssistantCard extends LitElement {
-  @property({ attribute: false }) public hass!: any;
+  @property({ attribute: false }) public hass!: HomeAssistant;
   @state() private _config!: OnlyCatCardConfig;
 
-  @state() private _showRebootConfirm = false;
+  @query("dialog.reboot-dialog") private _rebootDialog?: HTMLDialogElement;
+  @query(".action-btn--secondary") private _rebootButton?: HTMLButtonElement;
 
-  // ── Entity ID helpers ──────────────────────────────────────────────────────
-
-  private get _deviceId() {
-    return this._config?.device_id ?? "";
-  }
-  private get _cameraEntityId() {
-    return `camera.${this._deviceId}_last_activity_video`;
-  }
-  private get _lockEntityId() {
-    return `binary_sensor.${this._deviceId}_lock`;
-  }
-  private get _connectivityEntityId() {
-    return `binary_sensor.${this._deviceId}_connectivity`;
-  }
-  private get _policyEntityId() {
-    return `select.${this._deviceId}_policy`;
-  }
-  private get _unlockEntityId() {
-    return `button.${this._deviceId}_unlock`;
-  }
-  private get _rebootEntityId() {
-    return `button.${this._deviceId}_reboot`;
-  }
-  private get _eventEntityId() {
-    return `binary_sensor.${this._deviceId}_event`;
-  }
-  private get _contrabandEntityId() {
-    return `binary_sensor.${this._deviceId}_contraband`;
-  }
-  private get _humanEntityId() {
-    return `binary_sensor.${this._deviceId}_human`;
-  }
-  private get _lastActivityEntityId() {
-    return `image.${this._deviceId}_last_activity_image`;
-  }
-  private get _errorsEntityId() {
-    return `binary_sensor.${this._deviceId}_errors`;
-  }
+  /** Entity ids resolved for the current render (see utils/entities). */
+  private _ids: ResolvedEntities = resolveEntities(undefined, {});
 
   // ── Lifecycle ──────────────────────────────────────────────────────────────
 
   public static getStubConfig(): OnlyCatCardConfig {
     return {
       name: "",
-      device_id: "",
+      device: "",
       show_title: true,
     };
   }
@@ -71,15 +41,32 @@ class OnlyCatHomeAssistantCard extends LitElement {
     if (!config) throw new Error("Invalid configuration.");
     this._config = {
       name: config.name ?? "",
+      device: config.device ?? "",
       device_id: config.device_id ?? "",
       show_title: config.show_title !== false,
       show_pets: config.show_pets !== false,
+      ...(config.entities ? { entities: { ...config.entities } } : {}),
+      ...(config.history_days !== undefined
+        ? { history_days: config.history_days }
+        : {}),
       ...(config.pets ? { pets: config.pets } : {}),
     };
   }
 
+  /**
+   * Height in 50 px units for the masonry view: the rendered height when the
+   * card is laid out (it grows when the timeline is unfolded), otherwise an
+   * estimate of the folded card.
+   */
   public getCardSize(): number {
-    return 5;
+    const height = this.offsetHeight;
+    if (height > 0) return Math.ceil(height / 50);
+    return this._config?.show_title === false ? 7 : 8;
+  }
+
+  /** Sections view: full width by default, height follows the content. */
+  public getGridOptions() {
+    return { columns: 12, min_columns: 6, rows: "auto" as const };
   }
 
   // ── State helpers ─────────────────────────────────────────────────────────
@@ -105,39 +92,40 @@ class OnlyCatHomeAssistantCard extends LitElement {
     return this._entity(entityId)?.state === "on";
   }
 
-  private _t(key: Parameters<typeof localize>[1]): string {
-    return localize(this.hass, key);
+  /** False when the entity is missing, "unavailable" or "unknown". */
+  private _isAvailable(entityId: string): boolean {
+    const state = this._entity(entityId)?.state;
+    return !!state && state !== "unavailable" && state !== "unknown";
   }
 
-  private _tf(
-    key: Parameters<typeof localizeFormat>[1],
-    vars: Record<string, string | number>,
-  ): string {
-    return localizeFormat(this.hass, key, vars);
+  /** "on" / "off" for a usable binary sensor, null otherwise. */
+  private _binaryState(entityId: string): "on" | "off" | null {
+    const state = this._entity(entityId)?.state;
+    return state === "on" || state === "off" ? state : null;
   }
 
   // ── Actions ───────────────────────────────────────────────────────────────
 
   private _onUnlock() {
-    if (!this._entity(this._unlockEntityId)) return;
+    if (!this._isAvailable(this._ids.unlock)) return;
     this.hass.callService("button", "press", {
-      entity_id: this._unlockEntityId,
+      entity_id: this._ids.unlock,
     });
   }
 
   private _onRebootConfirm() {
-    if (!this._entity(this._rebootEntityId)) return;
+    if (!this._isAvailable(this._ids.reboot)) return;
     this.hass.callService("button", "press", {
-      entity_id: this._rebootEntityId,
+      entity_id: this._ids.reboot,
     });
-    this._showRebootConfirm = false;
+    this._closeRebootConfirm();
   }
 
   private _onPolicyChange(ev: Event) {
     const option = (ev.target as HTMLSelectElement).value;
     if (!option) return;
     this.hass.callService("select", "select_option", {
-      entity_id: this._policyEntityId,
+      entity_id: this._ids.policy,
       option,
     });
   }
@@ -145,10 +133,12 @@ class OnlyCatHomeAssistantCard extends LitElement {
   // ── Render helpers ────────────────────────────────────────────────────────
 
   private _renderStatusPills() {
-    const connected = this._isOn(this._connectivityEntityId);
-    // binary_sensor lock: "on" = unlocked, "off" = locked
-    const locked = !this._isOn(this._lockEntityId);
-    const hasErrors = this._isOn(this._errorsEntityId);
+    const connectivity = this._binaryState(this._ids.connectivity);
+    // binary_sensor lock (device_class lock): "on" = unlocked, "off" = locked.
+    // Anything else (missing entity, unavailable, unknown) is not "locked".
+    const lock = this._binaryState(this._ids.lock);
+    const hasErrors = this._isOn(this._ids.errors);
+    const unavailable = localize(this.hass, "card.unavailable");
 
     return html`
       <div class="status-pills">
@@ -159,38 +149,58 @@ class OnlyCatHomeAssistantCard extends LitElement {
               title="${localize(this.hass, "card.errors")}"
             ></ha-icon>`
           : nothing}
-        <div class="pill ${locked ? "pill--locked" : "pill--unlocked"}">
-          <ha-icon
-            icon="${locked ? "mdi:lock" : "mdi:lock-open-variant"}"
-          ></ha-icon>
-          <span
-            >${locked
-              ? localize(this.hass, "card.locked")
-              : localize(this.hass, "card.unlocked")}</span
-          >
-        </div>
-        <div class="pill ${connected ? "pill--online" : "pill--offline"}">
-          <ha-icon icon="${connected ? "mdi:wifi" : "mdi:wifi-off"}"></ha-icon>
-          <span
-            >${connected
-              ? localize(this.hass, "card.connected")
-              : localize(this.hass, "card.offline")}</span
-          >
-        </div>
+        ${lock === null
+          ? html`<div class="pill pill--lock pill--unknown">
+              <ha-icon icon="mdi:lock-question"></ha-icon>
+              <span>${unavailable}</span>
+            </div>`
+          : html`<div
+              class="pill pill--lock ${lock === "off"
+                ? "pill--locked"
+                : "pill--unlocked"}"
+            >
+              <ha-icon
+                icon="${lock === "off" ? "mdi:lock" : "mdi:lock-open-variant"}"
+              ></ha-icon>
+              <span
+                >${lock === "off"
+                  ? localize(this.hass, "card.locked")
+                  : localize(this.hass, "card.unlocked")}</span
+              >
+            </div>`}
+        ${connectivity === null
+          ? html`<div class="pill pill--connectivity pill--unknown">
+              <ha-icon icon="mdi:help-network-outline"></ha-icon>
+              <span>${unavailable}</span>
+            </div>`
+          : html`<div
+              class="pill pill--connectivity ${connectivity === "on"
+                ? "pill--online"
+                : "pill--offline"}"
+            >
+              <ha-icon
+                icon="${connectivity === "on" ? "mdi:wifi" : "mdi:wifi-off"}"
+              ></ha-icon>
+              <span
+                >${connectivity === "on"
+                  ? localize(this.hass, "card.connected")
+                  : localize(this.hass, "card.offline")}</span
+              >
+            </div>`}
       </div>
     `;
   }
 
   private _renderPolicy() {
-    const entity = this._entity(this._policyEntityId);
-    const options: string[] = entity?.attributes?.options ?? [];
+    const entity = this._entity(this._ids.policy);
+    const options = (entity?.attributes?.options as string[] | undefined) ?? [];
     const current: string = entity?.state ?? "";
 
     return html`
       <div class="row-section">
         <ha-icon icon="mdi:home-clock" class="section-icon"></ha-icon>
         <span class="section-label">${localize(this.hass, "card.policy")}</span>
-        ${entity
+        ${entity && this._isAvailable(this._ids.policy)
           ? html`
               <select
                 class="policy-select"
@@ -200,7 +210,7 @@ class OnlyCatHomeAssistantCard extends LitElement {
                 ${options.map(
                   (opt) =>
                     html`<option value="${opt}" ?selected=${opt === current}>
-                      ${opt}
+                      ${this.hass.formatEntityState?.(entity, opt) ?? opt}
                     </option>`,
                 )}
               </select>
@@ -217,6 +227,7 @@ class OnlyCatHomeAssistantCard extends LitElement {
       <div class="actions-row">
         <button
           class="action-btn action-btn--primary"
+          ?disabled=${!this._isAvailable(this._ids.unlock)}
           @click=${() => this._onUnlock()}
           title="${localize(this.hass, "actions.unlock_title")}"
         >
@@ -226,7 +237,9 @@ class OnlyCatHomeAssistantCard extends LitElement {
 
         <button
           class="action-btn action-btn--secondary"
-          @click=${() => (this._showRebootConfirm = true)}
+          ?disabled=${!this._isAvailable(this._ids.reboot)}
+          aria-haspopup="dialog"
+          @click=${() => this._openRebootConfirm()}
           title="${localize(this.hass, "actions.restart_title")}"
         >
           <ha-icon icon="mdi:restart"></ha-icon>
@@ -236,54 +249,76 @@ class OnlyCatHomeAssistantCard extends LitElement {
     `;
   }
 
-  // ── Modals ────────────────────────────────────────────────────────────────
+  // ── Confirmation dialog ───────────────────────────────────────────────────
+  //
+  // HA's own confirmation dialog (showConfirmationDialog / "dialog-box") is
+  // not reachable from a custom card: it is loaded through a private dynamic
+  // import of the frontend bundle. A native modal <dialog> gives the same
+  // guarantees: rendered in the top layer (no z-index or transformed-parent
+  // issue), background made inert with focus kept inside, Escape closes it,
+  // role "dialog" and focus restored to the trigger on close.
 
-  private _renderRebootModal() {
-    if (!this._showRebootConfirm) return nothing;
+  private _openRebootConfirm() {
+    this._rebootDialog?.showModal();
+  }
+
+  private _closeRebootConfirm() {
+    if (this._rebootDialog?.open) this._rebootDialog.close();
+  }
+
+  private _renderRebootDialog() {
     return html`
-      <div
-        class="modal-backdrop"
+      <dialog
+        class="reboot-dialog"
+        aria-labelledby="reboot-dialog-title"
+        aria-describedby="reboot-dialog-question"
         @click=${(e: Event) => {
-          if (e.target === e.currentTarget) this._showRebootConfirm = false;
+          // A click on the backdrop targets the <dialog> element itself.
+          if (e.target === e.currentTarget) this._closeRebootConfirm();
         }}
+        @close=${() => this._rebootButton?.focus()}
       >
-        <div class="modal modal--confirm" role="dialog" aria-modal="true">
-          <div class="modal-header">
-            <ha-icon
-              icon="mdi:alert-circle"
-              style="color:var(--warning-color,#ff9800)"
-            ></ha-icon>
-            <span>${localize(this.hass, "confirm_restart.title")}</span>
-            <button
-              class="modal-close"
-              @click=${() => (this._showRebootConfirm = false)}
-            >
-              <ha-icon icon="mdi:close"></ha-icon>
-            </button>
-          </div>
-          <div class="modal-body">
-            <p>${localize(this.hass, "confirm_restart.question")}</p>
-            <p class="confirm-note">
-              ${localize(this.hass, "confirm_restart.note")}
-            </p>
-          </div>
-          <div class="modal-footer">
-            <button
-              class="btn btn--cancel"
-              @click=${() => (this._showRebootConfirm = false)}
-            >
-              ${localize(this.hass, "actions.cancel")}
-            </button>
-            <button
-              class="btn btn--danger"
-              @click=${() => this._onRebootConfirm()}
-            >
-              <ha-icon icon="mdi:restart"></ha-icon>
-              ${localize(this.hass, "actions.restart")}
-            </button>
-          </div>
+        <div class="modal-header">
+          <ha-icon
+            icon="mdi:alert-circle"
+            style="color:var(--warning-color,#ff9800)"
+          ></ha-icon>
+          <span id="reboot-dialog-title"
+            >${localize(this.hass, "confirm_restart.title")}</span
+          >
+          <button
+            class="modal-close"
+            aria-label="${localize(this.hass, "actions.cancel")}"
+            @click=${() => this._closeRebootConfirm()}
+          >
+            <ha-icon icon="mdi:close"></ha-icon>
+          </button>
         </div>
-      </div>
+        <div class="modal-body">
+          <p id="reboot-dialog-question">
+            ${localize(this.hass, "confirm_restart.question")}
+          </p>
+          <p class="confirm-note">
+            ${localize(this.hass, "confirm_restart.note")}
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button
+            class="btn btn--cancel"
+            autofocus
+            @click=${() => this._closeRebootConfirm()}
+          >
+            ${localize(this.hass, "actions.cancel")}
+          </button>
+          <button
+            class="btn btn--danger"
+            @click=${() => this._onRebootConfirm()}
+          >
+            <ha-icon icon="mdi:restart"></ha-icon>
+            ${localize(this.hass, "actions.restart")}
+          </button>
+        </div>
+      </dialog>
     `;
   }
 
@@ -295,7 +330,7 @@ class OnlyCatHomeAssistantCard extends LitElement {
     const title = this._config.name || localize(this.hass, "card.name_default");
     const pets = this._pets;
 
-    if (!this._config.device_id) {
+    if (!isConfigured(this._config)) {
       return html`
         <ha-card>
           <div
@@ -311,6 +346,9 @@ class OnlyCatHomeAssistantCard extends LitElement {
         </ha-card>
       `;
     }
+
+    this._ids = resolveEntities(this.hass, this._config);
+    const ids = this._ids;
 
     return html`
       <ha-card>
@@ -329,11 +367,11 @@ class OnlyCatHomeAssistantCard extends LitElement {
         <div class="card-body">
           <onlycat-camera-panel
             .hass=${this.hass}
-            .entityId=${this._cameraEntityId}
-            .eventEntityId=${this._eventEntityId}
-            .humanEntityId=${this._humanEntityId}
-            .contrabandEntityId=${this._contrabandEntityId}
-            .lastActivityEntityId=${this._lastActivityEntityId}
+            .entityId=${ids.camera}
+            .eventEntityId=${ids.event}
+            .humanEntityId=${ids.human}
+            .contrabandEntityId=${ids.contraband}
+            .lastActivityEntityId=${ids.image}
             .pets=${pets}
           ></onlycat-camera-panel>
           ${this._config.show_pets
@@ -345,17 +383,17 @@ class OnlyCatHomeAssistantCard extends LitElement {
           ${this._renderPolicy()} ${this._renderActions()}
           <onlycat-activity-history
             .hass=${this.hass}
-            .eventEntityId=${this._eventEntityId}
-            .contrabandEntityId=${this._contrabandEntityId}
-            .humanEntityId=${this._humanEntityId}
-            .lockEntityId=${this._lockEntityId}
+            .eventEntityId=${ids.event}
+            .contrabandEntityId=${ids.contraband}
+            .humanEntityId=${ids.human}
+            .lockEntityId=${ids.lock}
             .pets=${pets}
-            .historyHours=${24}
+            .historyDays=${this._config.history_days ?? DEFAULT_HISTORY_DAYS}
           ></onlycat-activity-history>
         </div>
       </ha-card>
 
-      ${this._renderRebootModal()}
+      ${this._renderRebootDialog()}
     `;
   }
 
@@ -421,20 +459,28 @@ class OnlyCatHomeAssistantCard extends LitElement {
     }
 
     .pill--locked {
-      background: rgba(76, 175, 80, 0.15);
-      color: #4caf50;
+background: var(--secondary-background-color);
+      background: color-mix(in srgb, var(--success-color, #43a047) 15%, transparent);
+      color: var(--success-color, #43a047);
     }
     .pill--unlocked {
-      background: rgba(255, 152, 0, 0.15);
-      color: #ff9800;
+background: var(--secondary-background-color);
+      background: color-mix(in srgb, var(--warning-color, #ffa600) 15%, transparent);
+      color: var(--warning-color, #ffa600);
     }
     .pill--online {
-      background: rgba(33, 150, 243, 0.12);
-      color: #29b6f6;
+background: var(--secondary-background-color);
+      background: color-mix(in srgb, var(--info-color, #039be5) 12%, transparent);
+      color: var(--info-color, #039be5);
     }
     .pill--offline {
-      background: rgba(244, 67, 54, 0.12);
-      color: #ef5350;
+background: var(--secondary-background-color);
+      background: color-mix(in srgb, var(--error-color, #db4437) 12%, transparent);
+      color: var(--error-color, #db4437);
+    }
+    .pill--unknown {
+      background: var(--secondary-background-color);
+      color: var(--secondary-text-color);
     }
     .error-pill-icon {
       color: var(--error-color, #e53935);
@@ -514,7 +560,12 @@ class OnlyCatHomeAssistantCard extends LitElement {
         transform 0.1s;
     }
 
-    .action-btn:active {
+    .action-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .action-btn:not(:disabled):active {
       transform: scale(0.96);
       filter: brightness(0.9);
     }
@@ -534,39 +585,24 @@ class OnlyCatHomeAssistantCard extends LitElement {
       border: 1px solid var(--divider-color, #ccc);
     }
 
-    /* ── Modals ───────────────────────────────────────────────── */
-    .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.6);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-      animation: fadeIn 0.15s ease;
-    }
-
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-      }
-      to {
-        opacity: 1;
-      }
-    }
-
-    .modal {
-      background: var(--card-background-color);
+    /* ── Confirmation dialog ──────────────────────────────────── */
+    .reboot-dialog {
+      border: none;
+      padding: 0;
       border-radius: 14px;
-      max-width: 520px;
+      max-width: 380px;
       width: 92%;
-      overflow: hidden;
+      background: var(--card-background-color);
+      color: var(--primary-text-color);
       box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    }
+
+    .reboot-dialog[open] {
       animation: slideUp 0.2s ease;
     }
 
-    .modal--confirm {
-      max-width: 380px;
+    .reboot-dialog::backdrop {
+      background: rgba(0, 0, 0, 0.6);
     }
 
     @keyframes slideUp {
@@ -659,8 +695,8 @@ class OnlyCatHomeAssistantCard extends LitElement {
     }
 
     .btn--danger {
-      background: var(--error-color, #ef5350);
-      color: #fff;
+      background: var(--error-color, #db4437);
+      color: var(--text-primary-color, #fff);
     }
 
     .btn ha-icon {
